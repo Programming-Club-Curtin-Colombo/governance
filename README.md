@@ -153,11 +153,75 @@ The classifier runs in priority order:
 
 ## Using This in Another Repository
 
-1. Copy `.github/workflows/governance.yml` into your repository's `.github/workflows/` directory.
-2. Add `DISCORD_AUDIT_WEBHOOK_URL` to your repository secrets if using the Discord sink.
-3. Optionally create a `.governance.json` in your repo root to extend the global policy.
+Add the following workflow to your repository at `.github/workflows/governance.yml`:
 
-The workflow pulls and runs the governance engine directly from this repository at runtime — no forking required.
+```yaml
+name: Governance
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  governance:
+    name: Run Governance Engine
+    runs-on: ubuntu-latest
+
+    outputs:
+      allowed: ${{ steps.governance.outputs.allowed }}
+      role: ${{ steps.governance.outputs.role }}
+      type: ${{ steps.governance.outputs.type }}
+
+    steps:
+      - name: Run Governance
+        id: governance
+        uses: Programming-Club-Curtin-Colombo/governance@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          discord-webhook-url: ${{ secrets.DISCORD_AUDIT_WEBHOOK_URL }}
+          governance-webhook-url: ${{ secrets.GOVERNANCE_WEBHOOK_URL }}
+
+  enforce:
+    name: Enforce Governance Gate
+    runs-on: ubuntu-latest
+    needs: governance
+
+    steps:
+      - name: Validate Governance Result
+        run: |
+          if [ "${{ needs.governance.outputs.allowed }}" != "true" ]; then
+            echo "❌ Governance policy blocked this PR"
+            exit 1
+          fi
+          echo "✅ Governance checks passed"
+```
+
+Optionally create a `.governance.json` in your repo root to extend the global policy:
+
+```json
+{
+    "governance": {
+        "lockedVersion": "v1.0.0"
+    },
+    "roles": {
+        "maintainers": ["your-github-username"]
+    },
+    "emailValidation": {
+        "allowedEmailDomains": ["yourcompany.com"]
+    },
+    "audit": {
+        "sinks": {
+            "discord": true,
+            "repo": true,
+            "webhook": false
+        }
+    }
+}
+```
 
 ---
 
@@ -167,3 +231,4 @@ The workflow pulls and runs the governance engine directly from this repository 
 |---|---|---|
 | `GITHUB_TOKEN` | Yes (auto-provided) | Label management, PR comments, repo audit sink |
 | `DISCORD_AUDIT_WEBHOOK_URL` | If `discord` sink enabled | Discord audit notifications |
+| `GOVERNANCE_WEBHOOK_URL` | If `webhook` sink enabled | Generic HTTP audit delivery |

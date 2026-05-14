@@ -29,14 +29,8 @@ async function loadGlobalConfig(repoConfig) {
     const version = resolveVersion(repoConfig);
 
     const base = "https://raw.githubusercontent.com/Programming-Club-Curtin-Colombo/governance";
-
-    let url;
-
-    if (version) {
-        url = `${base}/${version}/standards/global.governance.json`;
-    } else {
-        url = `${base}/main/standards/global.governance.json`;
-    }
+    const ref = version ? version : "main";
+    const url = `${base}/${ref}/standards/global.governance.json`;
 
     return fetchJSON(url);
 }

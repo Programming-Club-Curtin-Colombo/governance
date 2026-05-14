@@ -11,7 +11,7 @@ function toDiscordPayload(event) {
             {
                 title: `PR #${event.pr.number} — ${statusEmoji}`,
                 description: event.pr.title,
-                color: color,
+                color,
 
                 fields: [
                     {

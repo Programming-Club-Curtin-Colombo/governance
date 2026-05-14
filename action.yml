@@ -1,0 +1,40 @@
+name: "Programming Club Governance"
+description: "Centralised governance engine for PR validation, role labelling, and structured audit event routing"
+
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  github-token:
+    required: true
+    description: "GitHub token with pull-requests:write and issues:write permissions"
+
+  discord-webhook-url:
+    required: false
+    description: "Discord webhook URL for audit event notifications"
+    default: ""
+
+  governance-webhook-url:
+    required: false
+    description: "Generic HTTP webhook URL for raw audit event delivery"
+    default: ""
+
+  governance-version:
+    required: false
+    description: "Pin a specific governance policy version (e.g. v1.2.0). Defaults to main."
+    default: ""
+
+outputs:
+  allowed:
+    description: "Whether the PR passed governance (true or false)"
+
+  role:
+    description: "Resolved contributor role (student, external, or maintainer)"
+
+  type:
+    description: "Classified PR type (feature, bug, infra, or docs)"
+
+runs:
+  using: "node20"
+  main: "engine/run.js"

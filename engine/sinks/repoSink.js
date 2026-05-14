@@ -1,4 +1,3 @@
-
 async function writeRepoAudit(event, { octokit }) {
     const repoName =
         `${event.repo}`.replace("/", "__");

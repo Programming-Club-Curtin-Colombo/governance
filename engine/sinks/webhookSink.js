@@ -1,10 +1,10 @@
-async function sendWebhook(event, { webhookUrl }) {
-    if (!webhookUrl) {
+async function sendWebhook(event, { governanceWebhookUrl }) {
+    if (!governanceWebhookUrl) {
         console.warn("[AUDIT][WEBHOOK] Webhook URL not configured — skipping.");
         return;
     }
 
-    const response = await fetch(webhookUrl, {
+    const response = await fetch(governanceWebhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(event)

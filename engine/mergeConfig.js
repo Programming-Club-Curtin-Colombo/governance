@@ -1,51 +1,38 @@
 function mergeConfigs(globalConfig, repoConfig = {}) {
     const merged = structuredClone(globalConfig);
 
-    // =========================
-    // ROLE CONFIG (shallow override)
-    // =========================
     merged.roles = {
         ...globalConfig.roles,
         ...repoConfig.roles
     };
 
-    // =========================
-    // EMAIL DOMAINS (UNION RULE)
-    // =========================
-    const globalDomains =
-        globalConfig.emailValidation?.allowedEmailDomains || [];
-
-    const repoDomains =
-        repoConfig.emailValidation?.allowedEmailDomains || [];
+    const globalDomains = globalConfig.emailValidation?.allowedEmailDomains || [];
+    const repoDomains = repoConfig.emailValidation?.allowedEmailDomains || [];
 
     merged.emailValidation = {
         ...globalConfig.emailValidation,
         ...repoConfig.emailValidation,
-        allowedEmailDomains: [
-            ...new Set([...globalDomains, ...repoDomains])
-        ]
+        allowedEmailDomains: [...new Set([...globalDomains, ...repoDomains])]
     };
 
-    // =========================
-    // EXTERNAL WHITELIST (UNION RULE)
-    // =========================
-    const globalExternal =
-        globalConfig.roles?.external?.whitelistUsers || [];
-
-    const repoExternal =
-        repoConfig.roles?.external?.whitelistUsers || [];
+    const globalExternal = globalConfig.roles?.external?.whitelistUsers || [];
+    const repoExternal = repoConfig.roles?.external?.whitelistUsers || [];
 
     merged.roles.external = {
         ...globalConfig.roles.external,
         ...repoConfig.roles?.external,
-        whitelistUsers: [
-            ...new Set([...globalExternal, ...repoExternal])
-        ]
+        whitelistUsers: [...new Set([...globalExternal, ...repoExternal])]
     };
 
-    // =========================
-    // DEBUG (repo override allowed)
-    // =========================
+    merged.audit = {
+        ...globalConfig.audit,
+        ...repoConfig.audit,
+        sinks: {
+            ...globalConfig.audit?.sinks,
+            ...repoConfig.audit?.sinks
+        }
+    };
+
     merged.debug = {
         ...globalConfig.debug,
         ...repoConfig.debug

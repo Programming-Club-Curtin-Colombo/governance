@@ -1,5 +1,4 @@
 const { eventRouter } = require("./eventRouter");
-/* test 3 */
 
 async function emitAuditEvent({ octokit, pr, config, payload }) {
     const event = {
@@ -18,7 +17,8 @@ async function emitAuditEvent({ octokit, pr, config, payload }) {
 
     await eventRouter(event, config, {
         octokit,
-        webhookUrl: process.env.DISCORD_AUDIT_WEBHOOK_URL
+        discordWebhookUrl: process.env.DISCORD_AUDIT_WEBHOOK_URL,
+        governanceWebhookUrl: process.env.GOVERNANCE_WEBHOOK_URL
     });
 
     return event;
