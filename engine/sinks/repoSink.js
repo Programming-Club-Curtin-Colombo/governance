@@ -30,7 +30,7 @@ async function writeRepoAudit(event, { octokit }) {
         owner: "Programming-Club-Curtin-Colombo",
         repo: "audit-log",
         path,
-        message: `audit(event): ${event.pr.number}`,
+        message: `audit(event): ${event.entity.type} ${event.entity.number || event.entity.branch}`,
         content,
         sha
     });

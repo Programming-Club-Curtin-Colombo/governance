@@ -5,12 +5,23 @@ function toDiscordPayload(event) {
     const statusEmoji =
         event.allowed ? "✅ APPROVED" : "❌ BLOCKED";
 
+    let title = `Governance — ${statusEmoji}`;
+    let description = "Unknown event";
+
+    if (event.entity?.type === "pull_request") {
+        title = `PR #${event.entity.number} — ${statusEmoji}`;
+        description = event.entity.title || "No title";
+    } else if (event.entity?.type === "push") {
+        title = `Push to ${event.entity.branch} — ${statusEmoji}`;
+        description = `Commits: ${event.commitCount || 0}`;
+    }
+
     return {
         username: "Governance Bot",
         embeds: [
             {
-                title: `PR #${event.pr.number} — ${statusEmoji}`,
-                description: event.pr.title,
+                title,
+                description,
                 color,
 
                 fields: [

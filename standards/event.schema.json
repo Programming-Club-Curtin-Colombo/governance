@@ -1,15 +1,18 @@
 {
-    "event": "pr.governance.result",
+    "event": "governance.result",
+    "eventVersion": "2.0",
     "timestamp": "ISO-8601",
     "repo": "owner/repo",
-    "pr": {
+    "entity": {
+        "type": "pull_request|push",
         "number": 0,
-        "title": ""
+        "title": "",
+        "branch": ""
     },
     "user": "",
     "email": "",
-    "role": "student|external|maintainer",
-    "type": "feature|bug|infra|docs",
+    "role": "student|external|maintainer|unknown",
+    "type": "feature|bug|infra|docs|push",
     "allowed": true,
     "reason": "",
     "policyVersion": "1.0.0"

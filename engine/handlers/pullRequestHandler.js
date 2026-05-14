@@ -133,7 +133,12 @@ async function handlePullRequest() {
 
         await emitAuditEvent({
             octokit,
-            pr,
+            repo: `${github.context.repo.owner}/${github.context.repo.repo}`,
+            entity: {
+                type: "pull_request",
+                number: pr.number,
+                title: pr.title
+            },
             config,
             payload: {
                 user: username,
@@ -166,7 +171,12 @@ async function handlePullRequest() {
 
     await emitAuditEvent({
         octokit,
-        pr,
+        repo: `${github.context.repo.owner}/${github.context.repo.repo}`,
+        entity: {
+            type: "pull_request",
+            number: pr.number,
+            title: pr.title
+        },
         config,
         payload: {
             user: username,

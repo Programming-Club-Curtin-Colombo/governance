@@ -88,12 +88,14 @@ Every governance decision emits an event conforming to this schema (`standards/e
 
 | Field | Type | Description |
 |---|---|---|
-| `event` | `string` | Always `pr.governance.result` |
-| `eventVersion` | `string` | Schema version |
+| `event` | `string` | Always `governance.result` |
+| `eventVersion` | `string` | Schema version (now `2.0`) |
 | `timestamp` | `string` | ISO-8601 |
 | `repo` | `string` | `owner/repo` |
-| `pr.number` | `number` | Pull request number |
-| `pr.title` | `string` | Pull request title |
+| `entity` | `object` | The subject of the event (PR, Push, etc.) |
+| `entity.type` | `string` | `pull_request` \| `push` |
+| `entity.number` | `number` | Pull request number (if applicable) |
+| `entity.branch` | `string` | Branch name (if push event) |
 | `user` | `string` | GitHub username |
 | `email` | `string` | GitHub account email |
 | `role` | `string` | `student` \| `external` \| `maintainer` |

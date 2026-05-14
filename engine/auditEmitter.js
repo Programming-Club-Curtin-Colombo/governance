@@ -1,15 +1,12 @@
 const { eventRouter } = require("./eventRouter");
 
-async function emitAuditEvent({ octokit, pr, config, payload }) {
+async function emitAuditEvent({ octokit, entity, repo, config, payload }) {
     const event = {
-        event: "pr.governance.result",
-        eventVersion: "1.0",
+        event: "governance.result",
+        eventVersion: "2.0",
         timestamp: new Date().toISOString(),
-        repo: `${pr.base.repo.owner.login}/${pr.base.repo.name}`,
-        pr: {
-            number: pr.number,
-            title: pr.title
-        },
+        repo,
+        entity,
         ...payload
     };
 
