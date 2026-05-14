@@ -1,0 +1,22 @@
+{
+  "emailValidation": {
+    "enabled": true,
+    "allowedEmailDomains": [
+      "student.curtin.edu.au"
+    ]
+  },
+
+  "roles": {
+    "maintainers": [],
+    
+    "external": {
+      "whitelistUsers": [],
+      "requireApproval": true,
+      "requireDomainCheck": true
+    }
+  },
+
+  "debug": {
+    "dryRun": false
+  }
+}
