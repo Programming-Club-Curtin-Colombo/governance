@@ -28,13 +28,31 @@ inputs:
 outputs:
   allowed:
     description: "Whether the PR passed governance (true or false)"
+    value: ${{ steps.engine.outputs.allowed }}
 
   role:
     description: "Resolved contributor role (student, external, or maintainer)"
+    value: ${{ steps.engine.outputs.role }}
 
   type:
     description: "Classified PR type (feature, bug, infra, or docs)"
+    value: ${{ steps.engine.outputs.type }}
 
 runs:
-  using: "node20"
-  main: "engine/run.js"
+  using: "composite"
+  steps:
+    - name: Install Dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: npm install @actions/core @actions/github
+
+    - name: Run Engine
+      id: engine
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: node engine/run.js
+      env:
+        INPUT_GITHUB-TOKEN: ${{ inputs.github-token }}
+        INPUT_DISCORD-WEBHOOK-URL: ${{ inputs.discord-webhook-url }}
+        INPUT_GOVERNANCE-WEBHOOK-URL: ${{ inputs.governance-webhook-url }}
+        INPUT_GOVERNANCE-VERSION: ${{ inputs.governance-version }}
