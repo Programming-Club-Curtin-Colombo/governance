@@ -1,0 +1,16 @@
+{
+    "event": "pr.governance.result",
+    "timestamp": "ISO-8601",
+    "repo": "owner/repo",
+    "pr": {
+        "number": 0,
+        "title": ""
+    },
+    "user": "",
+    "email": "",
+    "role": "student|external|maintainer",
+    "type": "feature|bug|infra|docs",
+    "allowed": true,
+    "reason": "",
+    "policyVersion": "1.0.0"
+}

@@ -1,22 +1,26 @@
 {
-  "emailValidation": {
-    "enabled": true,
-    "allowedEmailDomains": [
-      "student.curtin.edu.au"
-    ]
-  },
-
-  "roles": {
-    "maintainers": [],
-    
-    "external": {
-      "whitelistUsers": [],
-      "requireApproval": true,
-      "requireDomainCheck": true
+    "audit": {
+        "sinks": {
+            "discord": true,
+            "repo": true,
+            "webhook": false
+        }
+    },
+    "emailValidation": {
+        "enabled": true,
+        "allowedEmailDomains": [
+            "student.curtin.edu.au"
+        ]
+    },
+    "roles": {
+        "maintainers": [],
+        "external": {
+            "whitelistUsers": [],
+            "requireApproval": true,
+            "requireDomainCheck": true
+        }
+    },
+    "debug": {
+        "dryRun": false
     }
-  },
-
-  "debug": {
-    "dryRun": false
-  }
 }
