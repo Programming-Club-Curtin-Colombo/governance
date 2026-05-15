@@ -13,7 +13,12 @@ function toDiscordPayload(event) {
         description = event.entity.title || "No title";
     } else if (event.entity?.type === "push") {
         title = `Push to ${event.entity.branch} — ${statusEmoji}`;
-        description = `Commits: ${event.commitCount || 0}`;
+        
+        const commitList = (event.commits || [])
+            .map(c => `\`${c.id}\` ${c.message}`)
+            .join("\n");
+            
+        description = commitList || `Commits: ${event.commitCount || 0}`;
     }
 
     return {

@@ -14,6 +14,10 @@ const {
     emitAuditEvent
 } = require("../auditEmitter");
 
+const {
+    getRole
+} = require("../identity");
+
 function log(state, message) {
     console.log(
         `[GOVERNANCE][PUSH][${state.toUpperCase()}] ${message}`
@@ -52,6 +56,9 @@ async function handlePush() {
 
     log("info", `Push detected on ${branch}`);
     log("info", `Pusher: ${pusher}`);
+
+    const role = getRole(pusher, config);
+    log("info", `Role resolved: ${role}`);
 
     let allowed = true;
     let reason =
@@ -99,7 +106,7 @@ async function handlePush() {
 
             user: pusher,
 
-            role: "unknown",
+            role: role,
 
             type: "push",
 
@@ -111,6 +118,12 @@ async function handlePush() {
 
             commitCount:
                 payload.commits?.length || 0,
+
+            commits: (payload.commits || []).map(c => ({
+                id: c.id.substring(0, 7),
+                message: c.message,
+                author: c.author?.name
+            })),
 
             policyVersion:
                 config.version || "unknown"
