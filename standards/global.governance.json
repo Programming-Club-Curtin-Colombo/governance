@@ -13,7 +13,9 @@
         ]
     },
     "roles": {
-        "maintainers": [],
+        "maintainers": [
+            "aaron-fredrick"
+        ],
         "external": {
             "whitelistUsers": [],
             "requireApproval": true,
