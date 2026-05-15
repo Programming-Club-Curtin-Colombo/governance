@@ -35,9 +35,16 @@ async function loadGlobalConfig(repoConfig) {
     return fetchJSON(url);
 }
 
+const fs = require("fs");
+const path = require("path");
+
 function loadRepoConfig() {
+    const workspace = process.env.GITHUB_WORKSPACE || ".";
+    const configPath = path.join(workspace, ".governance.json");
+
     try {
-        return require("../.governance.json");
+        if (!fs.existsSync(configPath)) return {};
+        return JSON.parse(fs.readFileSync(configPath, "utf8"));
     } catch (err) {
         return {};
     }
