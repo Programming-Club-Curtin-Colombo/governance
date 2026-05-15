@@ -48,7 +48,7 @@ function validateStructure(config) {
 
         }
         if (!content.includes("blank_issues_enabled: false")) {
-            errors.push("Private repository must set 'blank_issues_enabled: false' in '.github/ISSUE_TEMPLATE/config.yml'.");
+            errors.push("The issue configuration must set 'blank_issues_enabled: false' in '.github/ISSUE_TEMPLATE/config.yml'.");
         }
     }
 
