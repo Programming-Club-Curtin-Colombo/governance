@@ -9,6 +9,14 @@ const {
     handlePush
 } = require("./handlers/pushHandler");
 
+const {
+    validateStructure
+} = require("./structureValidator");
+
+const {
+    loadRepoConfig
+} = require("./configLoader");
+
 const discordWebhookUrl =
     process.env.DISCORD_AUDIT_WEBHOOK_URL ||
     core.getInput("discord-webhook-url") ||
@@ -38,6 +46,17 @@ async function run() {
         console.log(
             `[GOVERNANCE][SYSTEM] Event: ${eventName}`
         );
+
+        console.log(
+            `[GOVERNANCE][SYSTEM] Validating repository structure...`
+        );
+        const config = loadRepoConfig();
+        const structureErrors = validateStructure(config);
+        if (structureErrors.length > 0) {
+            throw new Error(
+                `Repository structure violations:\n- ${structureErrors.join("\n- ")}`
+            );
+        }
 
         switch (eventName) {
 
