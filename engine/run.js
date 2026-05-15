@@ -43,19 +43,23 @@ async function run() {
         const eventName =
             github.context.eventName;
 
-        console.log(
-            `[GOVERNANCE][SYSTEM] Event: ${eventName}`
-        );
+        const isGovernanceRepo = github.context.repo.owner === "Programming-Club-Curtin-Colombo" && github.context.repo.repo === "governance";
 
-        console.log(
-            `[GOVERNANCE][SYSTEM] Validating repository structure...`
-        );
-        const config = loadRepoConfig();
-        const structureErrors = validateStructure(config);
-        if (structureErrors.length > 0) {
-            throw new Error(
-                `Repository structure violations:\n- ${structureErrors.join("\n- ")}`
+        if (isGovernanceRepo) {
+            console.log(
+                `[GOVERNANCE][SYSTEM] Skipping structure validation for core governance repo`
             );
+        } else {
+            console.log(
+                `[GOVERNANCE][SYSTEM] Validating repository structure...`
+            );
+            const config = loadRepoConfig();
+            const structureErrors = validateStructure(config);
+            if (structureErrors.length > 0) {
+                throw new Error(
+                    `Repository structure violations:\n- ${structureErrors.join("\n- ")}`
+                );
+            }
         }
 
         switch (eventName) {
