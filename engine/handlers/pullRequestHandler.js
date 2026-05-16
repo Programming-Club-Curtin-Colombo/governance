@@ -19,6 +19,9 @@ const { classifyPR } =
 const { emitAuditEvent } =
     require("../auditEmitter");
 
+const { evaluateCIStages } =
+    require("./ciStageChecker");
+
 const ROLE_LABELS = [
     "role:student",
     "role:external",
@@ -68,7 +71,33 @@ function log(role, state, message) {
     );
 }
 
-async function handlePullRequest() {
+async function blockPR(octokit, pr, config, { username, email, role, type, reason }) {
+    await emitAuditEvent({
+        octokit,
+        repo: `${github.context.repo.owner}/${github.context.repo.repo}`,
+        entity: {
+            type: "pull_request",
+            number: pr.number,
+            title: pr.title
+        },
+        config,
+        payload: {
+            user: username,
+            email,
+            role,
+            type,
+            allowed: false,
+            reason,
+            eventType: github.context.eventName
+        }
+    });
+
+    core.setFailed(
+        `[GOVERNANCE][PR][${role.toUpperCase()}][BLOCKED] ${reason}`
+    );
+}
+
+async function handlePullRequest(ciStatuses) {
 
     const pr = github.context.payload.pull_request;
 
@@ -89,35 +118,53 @@ async function handlePullRequest() {
     const username = pr.user.login;
 
     const { data: user } =
-        await octokit.rest.users.getByUsername({
-            username
-        });
+        await octokit.rest.users.getByUsername({ username });
 
     const email = user.email;
 
     const repoConfig = loadRepoConfig();
+    const globalConfig = await loadGlobalConfig(repoConfig);
+    const config = mergeConfigs(globalConfig, repoConfig);
 
-    const globalConfig =
-        await loadGlobalConfig(repoConfig);
-
-    const config =
-        mergeConfigs(globalConfig, repoConfig);
-
-    const role =
-        getRole(username, config);
-
-    const type =
-        classifyPR(pr);
+    const role = getRole(username, config);
+    const type = classifyPR(pr);
 
     log(role, "info", `Role resolved: ${role}`);
     log(role, "info", `PR classified: ${type}`);
 
-    const result =
-        validateContributor({
+    core.setOutput("role", role);
+    core.setOutput("type", type);
+
+    // =========================================
+    // CI STAGE GATE
+    // =========================================
+    const { violations } = evaluateCIStages(
+        config.requiredStages,
+        ciStatuses
+    );
+
+    if (violations.length > 0) {
+        const reason =
+            `Required CI stages failed: ${violations.join(", ")}`;
+
+        log(role, "blocked", reason);
+        core.setOutput("allowed", "false");
+
+        await blockPR(octokit, pr, config, {
+            username,
             email,
             role,
-            config
+            type,
+            reason
         });
+
+        return;
+    }
+
+    // =========================================
+    // IDENTITY / POLICY GATE
+    // =========================================
+    const result = validateContributor({ email, role, config });
 
     log(
         role,
@@ -126,46 +173,21 @@ async function handlePullRequest() {
     );
 
     core.setOutput("allowed", String(result.allowed));
-    core.setOutput("role", role);
-    core.setOutput("type", type);
 
     if (!result.allowed) {
-
-        await emitAuditEvent({
-            octokit,
-            repo: `${github.context.repo.owner}/${github.context.repo.repo}`,
-            entity: {
-                type: "pull_request",
-                number: pr.number,
-                title: pr.title
-            },
-            config,
-            payload: {
-                user: username,
-                email,
-                role,
-                type,
-                allowed: false,
-                reason: result.reason,
-                eventType: github.context.eventName
-            }
+        await blockPR(octokit, pr, config, {
+            username,
+            email,
+            role,
+            type,
+            reason: result.reason
         });
-
-        core.setFailed(
-            `[GOVERNANCE][PR][${role.toUpperCase()}][BLOCKED] ${result.reason}`
-        );
 
         return;
     }
 
     await cleanupLabels(octokit, pr);
-
-    await applyLabels(
-        octokit,
-        pr,
-        role,
-        type
-    );
+    await applyLabels(octokit, pr, role, type);
 
     log(role, "label", "Labels applied");
 

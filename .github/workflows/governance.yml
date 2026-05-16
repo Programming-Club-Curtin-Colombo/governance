@@ -1,12 +1,13 @@
-name: Governance Pipeline
+name: Governance Self-Test
+
+# This workflow is for validating the governance engine itself.
+# Consumer repositories use ci.yml as the standard pipeline.
+# Push enforcement is intentionally omitted here — the engine
+# has no CI output to evaluate against itself.
 
 on:
   pull_request:
   pull_request_target:
-
-  push:
-    branches:
-      - main
 
 permissions:
   contents: write
@@ -42,8 +43,8 @@ jobs:
       - name: Validate Governance Result
         run: |
           if [ "${{ needs.governance.outputs.allowed }}" != "true" ]; then
-            echo "Governance blocked operation"
+            echo "[GOVERNANCE] BLOCKED"
             exit 1
           fi
 
-          echo "Governance passed"
+          echo "[GOVERNANCE] PASSED"

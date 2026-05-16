@@ -36,6 +36,15 @@ if (discordWebhookUrl) process.env.DISCORD_AUDIT_WEBHOOK_URL = discordWebhookUrl
 if (governanceWebhookUrl) process.env.GOVERNANCE_WEBHOOK_URL = governanceWebhookUrl;
 if (governanceVersion) process.env.GOVERNANCE_VERSION = governanceVersion;
 
+function readCIStatuses() {
+    return {
+        build:    core.getInput("build-status")    || "",
+        lint:     core.getInput("lint-status")     || "",
+        test:     core.getInput("test-status")     || "",
+        security: core.getInput("security-status") || ""
+    };
+}
+
 async function run() {
 
     try {
@@ -43,7 +52,9 @@ async function run() {
         const eventName =
             github.context.eventName;
 
-        const isGovernanceRepo = github.context.repo.owner === "Programming-Club-Curtin-Colombo" && github.context.repo.repo === "governance";
+        const isGovernanceRepo =
+            github.context.repo.owner === "Programming-Club-Curtin-Colombo" &&
+            github.context.repo.repo === "governance";
 
         if (isGovernanceRepo) {
             console.log(
@@ -62,17 +73,19 @@ async function run() {
             }
         }
 
+        const ciStatuses = readCIStatuses();
+
         switch (eventName) {
 
             case "pull_request":
             case "pull_request_target":
 
-                await handlePullRequest();
+                await handlePullRequest(ciStatuses);
                 break;
 
             case "push":
 
-                await handlePush();
+                await handlePush(ciStatuses);
                 break;
 
             default:

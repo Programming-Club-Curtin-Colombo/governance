@@ -24,5 +24,11 @@
     },
     "debug": {
         "dryRun": false
+    },
+    "requiredStages": {
+        "lint": true,
+        "test": true,
+        "security": true,
+        "build": true
     }
 }
