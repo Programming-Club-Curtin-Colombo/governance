@@ -1,0 +1,21 @@
+{
+  "job": "lint",
+  "status": "passed",
+  "reports": [
+    {
+      "name": "ESLint",
+      "failed": false,
+      "comment": "No linting errors found across 15 files."
+    },
+    {
+      "name": "Prettier",
+      "failed": false,
+      "comment": "All files match the configured formatting standards."
+    },
+    {
+      "name": "MarkdownLint",
+      "failed": false,
+      "comment": "No markdown issues detected."
+    }
+  ]
+}
