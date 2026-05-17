@@ -102,6 +102,40 @@ function generateHTMLReport(workspace) {
 
     fs.writeFileSync(outputFile, html);
     console.log(`[GOVERNANCE][SYSTEM] Generated HTML report at ${outputFile}`);
+
+    // Generate Markdown for GitHub Step Summary
+    let markdown = `# CI Governance Report\n\n`;
+    if (reportsData.length === 0) {
+        markdown += `No job reports found.\n`;
+    } else {
+        for (const data of reportsData) {
+            const emoji = data.status === "passed" ? "✅" : (data.status === "error" ? "⚠️" : "❌");
+            markdown += `## ${emoji} ${data.job || "Unknown Job"} (${data.status})\n\n`;
+            
+            if (data.reports && Array.isArray(data.reports)) {
+                for (const rep of data.reports) {
+                    const repEmoji = rep.status === "passed" ? "🟢" : "🔴";
+                    markdown += `- ${repEmoji} **${rep.name || "Unnamed Rule"}**: ${(rep.status || "UNKNOWN").toUpperCase()}`;
+                    if (rep.comment) {
+                        markdown += ` - *${rep.comment}*`;
+                    }
+                    markdown += `\n`;
+                }
+            } else {
+                markdown += `- *No detailed reports available for this job.*\n`;
+            }
+            markdown += `\n`;
+        }
+    }
+
+    if (process.env.GITHUB_STEP_SUMMARY) {
+        try {
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, markdown);
+            console.log(`[GOVERNANCE][SYSTEM] Appended Markdown report to GITHUB_STEP_SUMMARY`);
+        } catch (e) {
+            console.error(`[GOVERNANCE][SYSTEM] Failed to write to GITHUB_STEP_SUMMARY:`, e);
+        }
+    }
 }
 
 module.exports = { generateHTMLReport };
