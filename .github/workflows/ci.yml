@@ -25,7 +25,7 @@ jobs:
 
       - name: Create Report Artifact
         run: |
-          echo '{"job": "build", "status": "passed", "reports": [{"name": "Compile Source", "failed": false, "comment": "Compiled successfully"}]}' > build-report.json
+          echo '{"job": "build", "status": "passed", "reports": [{"name": "General", "status": "passed", "comment": "Passed"}]}' > build-report.json
 
       - name: Upload Build Report
         uses: actions/upload-artifact@v4
@@ -57,7 +57,7 @@ jobs:
 
       - name: Create Report Artifact
         run: |
-          echo '{"job": "lint", "status": "passed", "reports": [{"name": "ESLint", "failed": false, "comment": "No linting errors found"}]}' > lint-report.json
+          echo '{"job": "lint", "status": "passed", "reports": [{"name": "General", "status": "passed", "comment": "Passed"}]}' > lint-report.json
 
       - name: Upload Lint Report
         uses: actions/upload-artifact@v4
@@ -89,7 +89,7 @@ jobs:
 
       - name: Create Report Artifact
         run: |
-          echo '{"job": "static", "status": "passed", "reports": [{"name": "SonarQube", "failed": false, "comment": "0 bugs, 0 vulnerabilities"}]}' > static-report.json
+          echo '{"job": "static", "status": "passed", "reports": [{"name": "General", "status": "passed", "comment": "Passed"}]}' > static-report.json
 
       - name: Upload Static Report
         uses: actions/upload-artifact@v4
@@ -121,7 +121,7 @@ jobs:
 
       - name: Create Report Artifact
         run: |
-          echo '{"job": "test", "status": "passed", "reports": [{"name": "Unit Tests", "failed": false, "comment": "100% tests passed"}]}' > test-report.json
+          echo '{"job": "test", "status": "passed", "reports": [{"name": "General", "status": "passed", "comment": "Passed"}]}' > test-report.json
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
@@ -153,7 +153,7 @@ jobs:
 
       - name: Create Report Artifact
         run: |
-          echo '{"job": "security", "status": "passed", "reports": [{"name": "NPM Audit", "failed": false, "comment": "0 critical vulnerabilities"}]}' > security-report.json
+          echo '{"job": "security", "status": "passed", "reports": [{"name": "General", "status": "passed", "comment": "Passed"}]}' > security-report.json
 
       - name: Upload Security Report
         uses: actions/upload-artifact@v4
@@ -201,7 +201,7 @@ jobs:
       #   "reports": [
       #     {
       #       "name": "Compile Source",
-      #       "failed": false,
+      #       "status": "passed",
       #       "comment": "Successfully compiled"
       #     }
       #   ]

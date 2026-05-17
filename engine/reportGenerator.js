@@ -22,7 +22,7 @@ function generateHTMLReport(workspace) {
                             reportsData.push({
                                 job: f,
                                 status: "error",
-                                reports: [{ name: "Parse Error", failed: true, comment: `Failed to parse ${f}` }]
+                                reports: [{ name: "Parse Error", status: "error", comment: `Failed to parse ${f}` }]
                             });
                         }
                     }
@@ -76,8 +76,8 @@ function generateHTMLReport(workspace) {
         
         if (data.reports && Array.isArray(data.reports)) {
             for (const rep of data.reports) {
-                const ruleClass = rep.failed ? "rule-status-fail" : "rule-status-pass";
-                const ruleText = rep.failed ? "FAILED" : "PASSED";
+                const ruleClass = rep.status === "passed" ? "rule-status-pass" : "rule-status-fail";
+                const ruleText = (rep.status || "UNKNOWN").toUpperCase();
                 html += `
             <li class="rule-item">
                 <div class="rule-header">

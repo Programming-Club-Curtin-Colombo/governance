@@ -4,17 +4,17 @@
   "reports": [
     {
       "name": "ESLint",
-      "failed": false,
+      "status": "passed",
       "comment": "No linting errors found across 15 files."
     },
     {
       "name": "Prettier",
-      "failed": false,
+      "status": "passed",
       "comment": "All files match the configured formatting standards."
     },
     {
       "name": "MarkdownLint",
-      "failed": false,
+      "status": "passed",
       "comment": "No markdown issues detected."
     }
   ]

@@ -27,9 +27,14 @@
             "type": "string",
             "description": "The name of the specific rule, task, or check."
           },
-          "failed": {
-            "type": "boolean",
-            "description": "True if this specific rule or check failed, false otherwise."
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "error"
+            ],
+            "description": "The status of this specific rule or check."
           },
           "comment": {
             "type": "string",
@@ -38,7 +43,7 @@
         },
         "required": [
           "name",
-          "failed"
+          "status"
         ]
       }
     }
