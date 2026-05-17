@@ -55,6 +55,14 @@ async function run() {
 
     try {
 
+        const { generateHTMLReport } = require("./reportGenerator");
+
+        try {
+            generateHTMLReport(process.env.GITHUB_WORKSPACE || ".");
+        } catch (e) {
+            console.error(`[GOVERNANCE][SYSTEM] Error generating HTML report:`, e);
+        }
+
         const eventName =
             github.context.eventName;
 
