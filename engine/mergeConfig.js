@@ -38,6 +38,16 @@ function mergeConfigs(globalConfig, repoConfig = {}) {
         ...repoConfig.debug
     };
 
+    merged.requiredStages = {
+        ...globalConfig.requiredStages,
+        ...repoConfig.requiredStages
+    };
+
+    merged.structure = {
+        ...globalConfig.structure,
+        ...repoConfig.structure
+    };
+
     return merged;
 }
 

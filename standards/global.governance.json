@@ -29,6 +29,33 @@
         "lint": true,
         "test": true,
         "security": true,
-        "build": true
+        "build": true,
+        "static": true
+    },
+    "structure": {
+        "directories": [
+            ".github/workflows",
+            ".github/ISSUE_TEMPLATE"
+        ],
+        "anyOfDirectories": [
+            ["tests", "src/tests"]
+        ],
+        "files": [
+            ".gitignore",
+            ".governance.json",
+            "README.md",
+            "ARCHITECTURE.md",
+            ".github/ISSUE_TEMPLATE/config.yml"
+        ],
+        "anyOfFiles": [
+            [".github/ISSUE_TEMPLATE/bug_report.yml", ".github/ISSUE_TEMPLATE/bug_report.md"],
+            [".github/ISSUE_TEMPLATE/feature_request.yml", ".github/ISSUE_TEMPLATE/feature_request.md"]
+        ],
+        "publicFiles": [
+            "CONTRIBUTING.md"
+        ],
+        "publicAnyOfFiles": [
+            ["SECURITY.md", ".github/SECURITY.md"]
+        ]
     }
 }

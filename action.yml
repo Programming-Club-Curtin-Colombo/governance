@@ -45,6 +45,11 @@ inputs:
     description: "Output of the security job ('true' if passed, 'false' or empty if not)"
     default: ""
 
+  static-status:
+    required: false
+    description: "Output of the static analysis job ('true' if passed, 'false' or empty if not)"
+    default: ""
+
 outputs:
   allowed:
     description: "Whether the PR passed governance (true or false)"
@@ -82,3 +87,4 @@ runs:
         INPUT_LINT-STATUS: ${{ inputs.lint-status }}
         INPUT_TEST-STATUS: ${{ inputs.test-status }}
         INPUT_SECURITY-STATUS: ${{ inputs.security-status }}
+        INPUT_STATIC-STATUS: ${{ inputs.static-status }}

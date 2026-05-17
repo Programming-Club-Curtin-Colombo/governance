@@ -14,8 +14,13 @@ const {
 } = require("./structureValidator");
 
 const {
-    loadRepoConfig
+    loadRepoConfig,
+    loadGlobalConfig
 } = require("./configLoader");
+
+const {
+    mergeConfigs
+} = require("./mergeConfig");
 
 const discordWebhookUrl =
     process.env.DISCORD_AUDIT_WEBHOOK_URL ||
@@ -41,7 +46,8 @@ function readCIStatuses() {
         build:    core.getInput("build-status")    || "",
         lint:     core.getInput("lint-status")     || "",
         test:     core.getInput("test-status")     || "",
-        security: core.getInput("security-status") || ""
+        security: core.getInput("security-status") || "",
+        static:   core.getInput("static-status")   || ""
     };
 }
 
@@ -56,6 +62,10 @@ async function run() {
             github.context.repo.owner === "Programming-Club-Curtin-Colombo" &&
             github.context.repo.repo === "governance";
 
+        let config = loadRepoConfig();
+        const globalConfig = await loadGlobalConfig(config);
+        config = mergeConfigs(globalConfig, config);
+
         if (isGovernanceRepo) {
             console.log(
                 `[GOVERNANCE][SYSTEM] Skipping structure validation for core governance repo`
@@ -64,7 +74,7 @@ async function run() {
             console.log(
                 `[GOVERNANCE][SYSTEM] Validating repository structure...`
             );
-            const config = loadRepoConfig();
+            
             const structureErrors = validateStructure(config);
             if (structureErrors.length > 0) {
                 throw new Error(

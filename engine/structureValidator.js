@@ -15,74 +15,79 @@ function validateStructure(config) {
     const checkFile = (p) => fs.existsSync(path.join(workspace, p));
     const listFiles = (p) => fs.existsSync(path.join(workspace, p)) ? fs.readdirSync(path.join(workspace, p)) : [];
 
-    // 1. Tests directory
-    const hasTests = checkFile("tests") || checkFile("src/tests");
-    if (!hasTests) {
-        errors.push("Missing 'tests' or 'src/tests' directory.");
-    }
+    const structure = config.structure;
+    if (!structure) return errors;
 
-    // 2. .gitignore
-    if (!checkFile(".gitignore")) {
-        errors.push("Missing '.gitignore' file.");
-    }
-
-    // 3. Workflow files
-    const workflowDir = ".github/workflows";
-    const hasWorkflows = checkFile(workflowDir) && listFiles(workflowDir).some(file => file.endsWith(".yml") || file.endsWith(".yaml"));
-    if (!hasWorkflows) {
-        errors.push("Missing workflow files in '.github/workflows/'.");
-    }
-
-    // 4. Issue templates
-    const templateDir = ".github/ISSUE_TEMPLATE";
-    const hasBug = checkFile(path.join(templateDir, "bug_report.yml")) || checkFile(path.join(templateDir, "bug_report.md"));
-    const hasFeature = checkFile(path.join(templateDir, "feature_request.yml")) || checkFile(path.join(templateDir, "feature_request.md"));
-    
-    if (!hasBug) errors.push("Missing bug report template (.github/ISSUE_TEMPLATE/bug_report.yml).");
-    if (!hasFeature) errors.push("Missing feature request template (.github/ISSUE_TEMPLATE/feature_request.yml).");
-
-    // 5. config.yml for issues
-    const configPath = path.join(templateDir, "config.yml");
-    if (!checkFile(configPath)) {
-        errors.push("Missing '.github/ISSUE_TEMPLATE/config.yml'.");
-    } else {
-        const content = fs.readFileSync(path.join(workspace, configPath), "utf8");
-        if (!isPrivate && !content.includes("contact_links:")) {
-            errors.push("Public repository must have 'contact_links' defined in '.github/ISSUE_TEMPLATE/config.yml'.");
-        }
-        if (!content.includes("blank_issues_enabled: false")) {
-            errors.push("The issue configuration must set 'blank_issues_enabled: false' in '.github/ISSUE_TEMPLATE/config.yml'.");
+    if (structure.directories) {
+        for (const dir of structure.directories) {
+            if (!checkFile(dir)) {
+                errors.push(`Missing required directory: '${dir}'.`);
+            } else {
+                // Special rule for workflows if it's required
+                if (dir === ".github/workflows") {
+                    const hasWorkflows = listFiles(dir).some(file => file.endsWith(".yml") || file.endsWith(".yaml"));
+                    if (!hasWorkflows) {
+                        errors.push(`Missing workflow files in '${dir}'.`);
+                    }
+                }
+            }
         }
     }
 
-    // 6. .governance.json
-    if (!checkFile(".governance.json")) {
-        errors.push("Missing '.governance.json' configuration file.");
+    if (structure.anyOfDirectories) {
+        for (const dirs of structure.anyOfDirectories) {
+            const hasAny = dirs.some(dir => checkFile(dir));
+            if (!hasAny) {
+                errors.push(`Missing one of required directories: ${dirs.join(" or ")}.`);
+            }
+        }
     }
 
-    // 7. README.md
-    if (!checkFile("README.md")) {
-        errors.push("Missing 'README.md'.");
+    if (structure.files) {
+        for (const file of structure.files) {
+            if (!checkFile(file)) {
+                errors.push(`Missing required file: '${file}'.`);
+            } else {
+                // Special rule for config.yml
+                if (file === ".github/ISSUE_TEMPLATE/config.yml") {
+                    const content = fs.readFileSync(path.join(workspace, file), "utf8");
+                    if (!isPrivate && !content.includes("contact_links:")) {
+                        errors.push(`Public repository must have 'contact_links' defined in '${file}'.`);
+                    }
+                    if (!content.includes("blank_issues_enabled: false")) {
+                        errors.push(`The issue configuration must set 'blank_issues_enabled: false' in '${file}'.`);
+                    }
+                }
+            }
+        }
     }
 
-    // 8. Public specific files
+    if (structure.anyOfFiles) {
+        for (const files of structure.anyOfFiles) {
+            const hasAny = files.some(file => checkFile(file));
+            if (!hasAny) {
+                errors.push(`Missing one of required files: ${files.join(" or ")}.`);
+            }
+        }
+    }
+
     if (!isPrivate) {
-        if (!checkFile("CONTRIBUTING.md")) {
-            errors.push("Missing 'CONTRIBUTING.md' (required for public repositories).");
+        if (structure.publicFiles) {
+            for (const file of structure.publicFiles) {
+                if (!checkFile(file)) {
+                    errors.push(`Missing '${file}' (required for public repositories).`);
+                }
+            }
         }
-        if (!checkFile(".github/SECURITY.md") && !checkFile("SECURITY.md")) {
-            errors.push("Missing 'SECURITY.md' (required for public repositories).");
+        
+        if (structure.publicAnyOfFiles) {
+            for (const files of structure.publicAnyOfFiles) {
+                const hasAny = files.some(file => checkFile(file));
+                if (!hasAny) {
+                    errors.push(`Missing one of: ${files.join(" or ")} (required for public repositories).`);
+                }
+            }
         }
-    }
-
-    // 9. ARCHITECTURE.md
-    if (!checkFile("ARCHITECTURE.md")) {
-        errors.push("Missing 'ARCHITECTURE.md'.");
-    }
-
-    // 10. API.md (optional unless mandatory)
-    if (config?.standards?.enforceAPI && !checkFile("API.md")) {
-        errors.push("Missing 'API.md' (mandatory according to governance config).");
     }
 
     return errors;
