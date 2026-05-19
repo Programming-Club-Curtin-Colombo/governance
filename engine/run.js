@@ -56,9 +56,10 @@ async function run() {
     try {
 
         const { generateHTMLReport } = require("./reportGenerator");
+        let htmlReportMarkdown = "";
 
         try {
-            generateHTMLReport(process.env.GITHUB_WORKSPACE || ".");
+            htmlReportMarkdown = generateHTMLReport(process.env.GITHUB_WORKSPACE || ".");
         } catch (e) {
             console.error(`[GOVERNANCE][SYSTEM] Error generating HTML report:`, e);
         }
@@ -98,7 +99,7 @@ async function run() {
             case "pull_request":
             case "pull_request_target":
 
-                await handlePullRequest(ciStatuses);
+                await handlePullRequest(ciStatuses, htmlReportMarkdown);
                 break;
 
             case "push":

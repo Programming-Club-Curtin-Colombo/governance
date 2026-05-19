@@ -136,6 +136,8 @@ function generateHTMLReport(workspace) {
             console.error(`[GOVERNANCE][SYSTEM] Failed to write to GITHUB_STEP_SUMMARY:`, e);
         }
     }
+
+    return markdown;
 }
 
 module.exports = { generateHTMLReport };
