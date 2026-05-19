@@ -1,4 +1,4 @@
-const KNOWN_STAGES = ["lint", "test", "security", "build"];
+const KNOWN_STAGES = ["lint", "test", "security", "build", "static"];
 
 /**
  * Reads the `requiredStages` block from config and compares each entry
