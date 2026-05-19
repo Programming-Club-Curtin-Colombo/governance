@@ -28,16 +28,21 @@ const ROLE_LABELS = [
     "role:maintainer"
 ];
 
-const TYPE_LABELS = [
-    "type:feature",
-    "type:bug",
-    "type:infra",
-    "type:docs"
-];
+// Maps internal classifier types to GitHub's standard existing labels.
+const TYPE_LABEL_MAP = {
+    feature: "enhancement",
+    bug:     "bug",
+    docs:    "documentation",
+    infra:   "maintenance"
+};
+
+// Legacy custom labels that may exist from earlier runs and must be cleaned up.
+const LEGACY_TYPE_LABELS = ["type:feature", "type:bug", "type:infra", "type:docs"];
 
 const GOVERNANCE_LABELS = [
     ...ROLE_LABELS,
-    ...TYPE_LABELS
+    ...Object.values(TYPE_LABEL_MAP),
+    ...LEGACY_TYPE_LABELS
 ];
 
 async function cleanupLabels(octokit, pr) {
@@ -54,13 +59,15 @@ async function cleanupLabels(octokit, pr) {
 }
 
 async function applyLabels(octokit, pr, role, type) {
+    const typeLabel = TYPE_LABEL_MAP[type] ?? `type:${type}`;
+
     await octokit.rest.issues.addLabels({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         issue_number: pr.number,
         labels: [
             `role:${role}`,
-            `type:${type}`
+            typeLabel
         ]
     });
 }
