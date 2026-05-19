@@ -71,7 +71,7 @@ function log(role, state, message) {
     );
 }
 
-async function blockPR(octokit, pr, config, { username, email, role, type, reason }) {
+async function blockPR(octokit, pr, config, { username, email, role, type, reason }, htmlReportMarkdown) {
     await emitAuditEvent({
         octokit,
         repo: `${github.context.repo.owner}/${github.context.repo.repo}`,
@@ -92,12 +92,32 @@ async function blockPR(octokit, pr, config, { username, email, role, type, reaso
         }
     });
 
+    try {
+        await octokit.rest.issues.createComment({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: pr.number,
+            body: `
+### Governance Result
+
+- Role: **${role}**
+- Type: **${type}**
+- Status: **BLOCKED**
+- Reason: ${reason}
+
+${htmlReportMarkdown ? `---\n\n${htmlReportMarkdown}` : ""}
+`
+        });
+    } catch (err) {
+        console.error("[GOVERNANCE][PR] Failed to add block comment:", err);
+    }
+
     core.setFailed(
         `[GOVERNANCE][PR][${role.toUpperCase()}][BLOCKED] ${reason}`
     );
 }
 
-async function handlePullRequest(ciStatuses) {
+async function handlePullRequest(ciStatuses, htmlReportMarkdown) {
 
     const pr = github.context.payload.pull_request;
 
@@ -156,7 +176,7 @@ async function handlePullRequest(ciStatuses) {
             role,
             type,
             reason
-        });
+        }, htmlReportMarkdown);
 
         return;
     }
@@ -181,7 +201,7 @@ async function handlePullRequest(ciStatuses) {
             role,
             type,
             reason: result.reason
-        });
+        }, htmlReportMarkdown);
 
         return;
     }
@@ -222,6 +242,8 @@ async function handlePullRequest(ciStatuses) {
 - Type: **${type}**
 - Status: **APPROVED**
 - Reason: ${result.reason}
+
+${htmlReportMarkdown ? `---\n\n${htmlReportMarkdown}` : ""}
 `
     });
 
