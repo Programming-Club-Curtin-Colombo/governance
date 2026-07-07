@@ -170,10 +170,15 @@ async function handlePullRequest(ciStatuses, htmlReportMarkdown) {
                 }
             }
             
-            // Fallback: just use the latest commit's author email if we still don't have one
+            // Fallback: use the most recent non-noreply commit author email if we still don't have one
             if (!email && commits.length > 0) {
-                const latestCommit = commits[commits.length - 1];
-                email = latestCommit.commit.author.email;
+                for (let i = commits.length - 1; i >= 0; i--) {
+                    const fallbackEmail = commits[i]?.commit?.author?.email;
+                    if (fallbackEmail && !fallbackEmail.includes("noreply.github.com")) {
+                        email = fallbackEmail;
+                        break;
+                    }
+                }
             }
         } catch (err) {
             console.error("[GOVERNANCE][PR] Failed to fetch commits to resolve email:", err);
