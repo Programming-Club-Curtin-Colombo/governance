@@ -2,7 +2,7 @@
     "audit": {
         "sinks": {
             "discord": true,
-            "repo": true,
+            "repo": false,
             "webhook": false
         }
     },

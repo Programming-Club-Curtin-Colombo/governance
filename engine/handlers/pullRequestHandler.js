@@ -147,7 +147,38 @@ async function handlePullRequest(ciStatuses, htmlReportMarkdown) {
     const { data: user } =
         await octokit.rest.users.getByUsername({ username });
 
-    const email = user.email;
+    let email = user.email;
+
+    if (!email) {
+        try {
+            const { data: commits } = await octokit.rest.pulls.listCommits({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                pull_number: pr.number
+            });
+
+            // Iterate backwards to get the most recent commit first
+            for (let i = commits.length - 1; i >= 0; i--) {
+                const c = commits[i];
+                // Check if the commit is linked to the same GitHub user
+                if (c.author && c.author.login === username) {
+                    const commitEmail = c.commit.author.email;
+                    if (commitEmail && !commitEmail.includes("noreply.github.com")) {
+                        email = commitEmail;
+                        break;
+                    }
+                }
+            }
+            
+            // Fallback: just use the latest commit's author email if we still don't have one
+            if (!email && commits.length > 0) {
+                const latestCommit = commits[commits.length - 1];
+                email = latestCommit.commit.author.email;
+            }
+        } catch (err) {
+            console.error("[GOVERNANCE][PR] Failed to fetch commits to resolve email:", err);
+        }
+    }
 
     const repoConfig = loadRepoConfig();
     const globalConfig = await loadGlobalConfig(repoConfig);
