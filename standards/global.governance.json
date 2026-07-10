@@ -22,6 +22,14 @@
             "requireDomainCheck": true
         }
     },
+    "artifactProbing": {
+        "enabled": true,
+        "warnOnMissing": true
+    },
+    "artifactArchive": {
+        "enabled": true,
+        "outputDir": "artifacts"
+    },
     "debug": {
         "dryRun": false
     },

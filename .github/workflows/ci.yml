@@ -233,6 +233,14 @@ jobs:
           name: ci-html-report
           path: ci-report.html
 
+      - name: Upload Governance Archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: governance-archive
+          path: artifacts/
+          if-no-files-found: warn
+
 
   # =========================================
   # ENFORCEMENT GATE
