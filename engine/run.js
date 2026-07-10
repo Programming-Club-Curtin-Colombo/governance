@@ -38,8 +38,10 @@ function readCIStatuses() {
         build:    core.getInput("build-status")    || "",
         lint:     core.getInput("lint-status")     || "",
         test:     core.getInput("test-status")     || "",
+        coverage: core.getInput("coverage-status") || "",
         security: core.getInput("security-status") || "",
-        static:   core.getInput("static-status")   || ""
+        static:   core.getInput("static-status")   || "",
+        sbom:     core.getInput("sbom-status")     || ""
     };
 }
 

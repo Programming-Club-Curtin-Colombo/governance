@@ -24,6 +24,11 @@ const STAGE_ARTIFACT_MAP = {
         candidates:      ["junit.xml"],
         archiveCategory: "test"
     },
+    coverage: {
+        dirs:            ["coverage-report", "test-report", "test"],
+        candidates:      ["lcov.info", "coverage.xml"],
+        archiveCategory: "test"
+    },
     security: {
         dirs:            ["security-report", "security"],
         candidates:      ["trivy.sarif", "dependency.sarif"],
@@ -33,6 +38,11 @@ const STAGE_ARTIFACT_MAP = {
         dirs:            ["static-report", "static"],
         candidates:      ["codeql.sarif", "semgrep.sarif"],
         archiveCategory: "analysis"
+    },
+    sbom: {
+        dirs:            ["sbom-report", "sbom"],
+        candidates:      ["cyclonedx.json"],
+        archiveCategory: "sbom"
     }
 };
 
@@ -43,10 +53,7 @@ const STAGE_ARTIFACT_MAP = {
  * @type {Array<{ filename: string, archiveCategory: string }>}
  */
 const OPPORTUNISTIC_FILES = [
-    { filename: "lcov.info",       archiveCategory: "test"  },
-    { filename: "coverage.xml",    archiveCategory: "test"  },
-    { filename: "cyclonedx.json",  archiveCategory: "sbom"  },
-    { filename: "benchmark.json",  archiveCategory: "build" }
+    { filename: "benchmark.json", archiveCategory: "build" }
 ];
 
 /**

@@ -286,10 +286,14 @@ function generateReport(workspace, artifactReport, commitAudit) {
             if (!fs.statSync(dirPath).isDirectory()) continue;
 
             for (const f of fs.readdirSync(dirPath)) {
-                if (!f.endsWith(".json")) continue;
+                // Only load summary files — ignore SARIF, JUnit, LCOV, CycloneDX etc.
+                if (!f.endsWith("-summary.json")) continue;
                 try {
                     const content = fs.readFileSync(path.join(dirPath, f), "utf8");
-                    reportsData.push(JSON.parse(content));
+                    const parsed  = JSON.parse(content);
+                    if (parsed.job && parsed.status) {
+                        reportsData.push(parsed);
+                    }
                 } catch {
                     reportsData.push({
                         job:     f,

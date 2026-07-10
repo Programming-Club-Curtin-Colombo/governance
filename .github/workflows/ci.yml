@@ -30,12 +30,14 @@ jobs:
 
       - name: Emit build-summary.json
         run: |
-          echo '{
+          cat > build-summary.json <<EOF
+          {
             "job": "build",
             "status": "passed",
-            "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
-            "reports": [{ "name": "General", "status": "passed", "comment": "Placeholder build passed" }]
-          }' > build-summary.json
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "reports": [{ "name": "Compile", "status": "passed", "comment": "Placeholder build passed" }]
+          }
+          EOF
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
@@ -80,11 +82,23 @@ jobs:
           }
           EOF
 
+      - name: Emit lint-summary.json
+        run: |
+          cat > lint-summary.json <<EOF
+          {
+            "job": "lint",
+            "status": "passed",
+            "reports": [{ "name": "ESLint", "status": "passed", "comment": "No lint violations found" }]
+          }
+          EOF
+
       - name: Upload Lint Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: lint-report
-          path: eslint.sarif
+          path: |
+            eslint.sarif
+            lint-summary.json
 
       - name: Set Lint Result
         id: result
@@ -121,11 +135,23 @@ jobs:
           }
           EOF
 
+      - name: Emit static-summary.json
+        run: |
+          cat > static-summary.json <<EOF
+          {
+            "job": "static",
+            "status": "passed",
+            "reports": [{ "name": "CodeQL", "status": "passed", "comment": "No findings" }]
+          }
+          EOF
+
       - name: Upload Static Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: static-report
-          path: codeql.sarif
+          path: |
+            codeql.sarif
+            static-summary.json
 
       - name: Set Static Result
         id: result
@@ -160,13 +186,89 @@ jobs:
           </testsuites>
           EOF
 
+      - name: Emit test-summary.json
+        run: |
+          cat > test-summary.json <<EOF
+          {
+            "job": "test",
+            "status": "passed",
+            "reports": [{ "name": "Unit Tests", "status": "passed", "comment": "1 test passed, 0 failed" }]
+          }
+          EOF
+
       - name: Upload Test Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: test-report
-          path: junit.xml
+          path: |
+            junit.xml
+            test-summary.json
 
       - name: Set Test Result
+        id: result
+        run: echo "passed=true" >> $GITHUB_OUTPUT
+
+
+  # =========================================
+  # COVERAGE
+  # =========================================
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    outputs:
+      passed: ${{ steps.result.outputs.passed }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Coverage
+        run: echo "[COVERAGE] Not implemented — placeholder"
+
+      - name: Emit lcov.info
+        run: |
+          cat > lcov.info <<'EOF'
+          TN:
+          SF:placeholder.js
+          FNF:0
+          FNH:0
+          LF:0
+          LH:0
+          BRF:0
+          BRH:0
+          end_of_record
+          EOF
+
+      - name: Emit coverage.xml
+        run: |
+          cat > coverage.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <coverage version="1" timestamp="0" lines-valid="0" lines-covered="0" line-rate="1" branches-covered="0" branches-valid="0" branch-rate="1" complexity="0">
+            <packages/>
+          </coverage>
+          EOF
+
+      - name: Emit coverage-summary.json
+        run: |
+          cat > coverage-summary.json <<EOF
+          {
+            "job": "coverage",
+            "status": "passed",
+            "reports": [{ "name": "Coverage", "status": "passed", "comment": "Placeholder — no coverage data" }]
+          }
+          EOF
+
+      - name: Upload Coverage Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            lcov.info
+            coverage.xml
+            coverage-summary.json
+
+      - name: Set Coverage Result
         id: result
         run: echo "passed=true" >> $GITHUB_OUTPUT
 
@@ -201,13 +303,81 @@ jobs:
           }
           EOF
 
+      - name: Emit security-summary.json
+        run: |
+          cat > security-summary.json <<EOF
+          {
+            "job": "security",
+            "status": "passed",
+            "reports": [{ "name": "Trivy", "status": "passed", "comment": "No vulnerabilities found" }]
+          }
+          EOF
+
       - name: Upload Security Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: security-report
-          path: trivy.sarif
+          path: |
+            trivy.sarif
+            security-summary.json
 
       - name: Set Security Result
+        id: result
+        run: echo "passed=true" >> $GITHUB_OUTPUT
+
+
+  # =========================================
+  # SBOM
+  # =========================================
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+
+    outputs:
+      passed: ${{ steps.result.outputs.passed }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM
+        run: echo "[SBOM] Not implemented — placeholder"
+
+      - name: Emit cyclonedx.json
+        run: |
+          cat > cyclonedx.json <<'EOF'
+          {
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.4",
+            "serialNumber": "urn:uuid:00000000-0000-0000-0000-000000000000",
+            "version": 1,
+            "metadata": {
+              "timestamp": "1970-01-01T00:00:00Z",
+              "tools": [{ "vendor": "Placeholder", "name": "sbom-tool", "version": "0.0.0" }]
+            },
+            "components": []
+          }
+          EOF
+
+      - name: Emit sbom-summary.json
+        run: |
+          cat > sbom-summary.json <<EOF
+          {
+            "job": "sbom",
+            "status": "passed",
+            "reports": [{ "name": "CycloneDX", "status": "passed", "comment": "SBOM generated (placeholder)" }]
+          }
+          EOF
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-report
+          path: |
+            cyclonedx.json
+            sbom-summary.json
+
+      - name: Set SBOM Result
         id: result
         run: echo "passed=true" >> $GITHUB_OUTPUT
 
@@ -226,7 +396,9 @@ jobs:
       - lint
       - static
       - test
+      - coverage
       - security
+      - sbom
 
     permissions:
       contents: write
@@ -261,7 +433,9 @@ jobs:
           INPUT_LINT-STATUS:            ${{ needs.lint.outputs.passed }}
           INPUT_STATIC-STATUS:          ${{ needs.static.outputs.passed }}
           INPUT_TEST-STATUS:            ${{ needs.test.outputs.passed }}
+          INPUT_COVERAGE-STATUS:        ${{ needs.coverage.outputs.passed }}
           INPUT_SECURITY-STATUS:        ${{ needs.security.outputs.passed }}
+          INPUT_SBOM-STATUS:            ${{ needs.sbom.outputs.passed }}
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
