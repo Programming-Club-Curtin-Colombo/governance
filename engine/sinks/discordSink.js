@@ -1,5 +1,7 @@
 const { toDiscordPayload } = require("../formatters/discordFormatter");
 
+const fs = require("fs");
+
 async function sendDiscord(event, { discordWebhookUrl }) {
     if (!discordWebhookUrl) {
         console.warn("[AUDIT][DISCORD] Webhook URL not configured — skipping.");
@@ -8,14 +10,23 @@ async function sendDiscord(event, { discordWebhookUrl }) {
 
     const payload = toDiscordPayload(event);
 
+    const formData = new FormData();
+    formData.append("payload_json", JSON.stringify(payload));
+
+    if (event.archivePath && fs.existsSync(event.archivePath)) {
+        const fileBuffer = fs.readFileSync(event.archivePath);
+        const fileBlob = new Blob([fileBuffer]);
+        formData.append("file[0]", fileBlob, "artifacts.tar.gz");
+    }
+
     const response = await fetch(discordWebhookUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: formData
     });
 
     if (!response.ok) {
-        throw new Error(`Discord webhook failed: ${response.status} ${response.statusText}`);
+        const text = await response.text();
+        throw new Error(`Discord webhook failed: ${response.status} ${response.statusText} - ${text}`);
     }
 }
 

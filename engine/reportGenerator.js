@@ -96,11 +96,11 @@ function renderCommitAuditHtml(commitAudit) {
 
     const commitRows = commitAudit.commits.map(c => {
         const coAuthorText = c.coAuthors?.length
-            ? c.coAuthors.map(ca => escapeHtml(`${ca.name} <${ca.email}>`)).join("<br>")
+            ? c.coAuthors.map(ca => escapeHtml(ca.name)).join("<br>")
             : "—";
         const authorText = c.author?.login
-            ? `@${escapeHtml(c.author.login)} &lt;${escapeHtml(c.author.email)}&gt;`
-            : escapeHtml(c.author?.email || "unknown");
+            ? `@${escapeHtml(c.author.login)}`
+            : escapeHtml(c.author?.name || "unknown");
 
         return `
             <tr>
@@ -194,11 +194,11 @@ function renderCommitAuditMd(commitAudit) {
 
     for (const c of commitAudit.commits) {
         const coAuthors = c.coAuthors?.length
-            ? c.coAuthors.map(ca => `${ca.name} <${ca.email}>`).join(", ")
+            ? c.coAuthors.map(ca => ca.name).join(", ")
             : "—";
         const author = c.author?.login
-            ? `@${c.author.login} <${c.author.email}>`
-            : (c.author?.email || "unknown");
+            ? `@${c.author.login}`
+            : (c.author?.name || "unknown");
 
         md += `| \`${c.sha}\` | ${c.message} | ${author} | ${coAuthors} |\n`;
     }
@@ -286,10 +286,14 @@ function generateReport(workspace, artifactReport, commitAudit) {
             if (!fs.statSync(dirPath).isDirectory()) continue;
 
             for (const f of fs.readdirSync(dirPath)) {
-                if (!f.endsWith(".json")) continue;
+                // Only load summary files — ignore SARIF, JUnit, LCOV, CycloneDX etc.
+                if (!f.endsWith("-summary.json")) continue;
                 try {
                     const content = fs.readFileSync(path.join(dirPath, f), "utf8");
-                    reportsData.push(JSON.parse(content));
+                    const parsed  = JSON.parse(content);
+                    if (parsed.job && parsed.status) {
+                        reportsData.push(parsed);
+                    }
                 } catch {
                     reportsData.push({
                         job:     f,

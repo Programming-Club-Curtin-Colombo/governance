@@ -105,8 +105,8 @@ async function auditPRCommits(octokit, pr, config, owner, repo) {
         commits.push({
             sha,
             message:  subject,
-            author:   { login: authorLogin, email: authorEmail, name: authorName },
-            coAuthors
+            author:   { login: authorLogin, name: authorName },
+            coAuthors: coAuthors.map(c => ({ name: c.name }))
         });
 
         mergeIntoRoster(roster, {
@@ -159,8 +159,8 @@ function auditPushCommits(webhookCommits, maintainers = []) {
         commits.push({
             sha,
             message:  subject,
-            author:   { login: null, name: authorName, email: authorEmail },
-            coAuthors
+            author:   { login: null, name: authorName },
+            coAuthors: coAuthors.map(c => ({ name: c.name }))
         });
 
         mergeIntoRoster(roster, {

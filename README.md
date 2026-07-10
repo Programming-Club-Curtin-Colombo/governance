@@ -14,6 +14,26 @@ On every pull request, the engine:
 4. **Blocks or approves** the PR by setting a GitHub Actions failure status and posting a comment.
 5. **Applies labels** (`role:<role>` + `type:<type>`) after cleaning up any stale governance labels.
 6. **Emits a structured audit event** (`pr.governance.result`) to all configured sinks.
+7. **Probes and archives** standard CI artifacts (`build.log`, `eslint.sarif`, etc.) into a consolidated report.
+
+---
+
+## Artifact Standards
+
+The engine expects specific CI outputs to populate the governance report and archive.
+
+| Category                | Preferred Format | Typical Filename                  |
+| ----------------------- | ---------------- | --------------------------------- |
+| Build logs              | Plain text       | `build.log`                       |
+| Build summary           | JSON (custom)    | `build-summary.json`              |
+| Unit tests              | JUnit XML        | `junit.xml`                       |
+| Coverage (JS/TS)        | LCOV             | `lcov.info`                       |
+| Coverage (general)      | Cobertura XML    | `coverage.xml`                    |
+| Lint                    | SARIF            | `eslint.sarif`                    |
+| Static Analysis         | SARIF            | `codeql.sarif`, `semgrep.sarif`   |
+| Security                | SARIF            | `trivy.sarif`, `dependency.sarif` |
+| Dependency graph / SBOM | CycloneDX        | `cyclonedx.json`                  |
+| Benchmark/Performance   | JSON             | `benchmark.json`                  |
 
 ---
 
@@ -178,14 +198,31 @@ jobs:
       role: ${{ steps.governance.outputs.role }}
       type: ${{ steps.governance.outputs.type }}
 
-    steps:
-      - name: Run Governance
-        id: governance
-        uses: Programming-Club-Curtin-Colombo/governance@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          discord-webhook-url: ${{ secrets.DISCORD_AUDIT_WEBHOOK_URL }}
-          governance-webhook-url: ${{ secrets.GOVERNANCE_WEBHOOK_URL }}
+        steps:
+          - name: Download all reports
+            uses: actions/download-artifact@v4
+            with:
+              path: reports
+
+          - name: Install Engine Dependencies
+            run: npm install --prefix ${{ github.workspace }} @actions/core@1.10.1 @actions/github@6.0.0
+
+          - name: Run Governance
+            id: governance
+            working-directory: ${{ github.workspace }}
+            run: node engine/run.js
+            env:
+              INPUT_GITHUB-TOKEN:           ${{ secrets.GITHUB_TOKEN }}
+              INPUT_DISCORD-WEBHOOK-URL:    ${{ secrets.DISCORD_AUDIT_WEBHOOK_URL }}
+              INPUT_GOVERNANCE-WEBHOOK-URL: ${{ secrets.GOVERNANCE_WEBHOOK_URL }}
+              INPUT_BUILD-STATUS:           ${{ needs.build.outputs.passed }}
+              INPUT_LINT-STATUS:            ${{ needs.lint.outputs.passed }}
+              INPUT_STATIC-STATUS:          ${{ needs.static.outputs.passed }}
+              INPUT_TEST-STATUS:            ${{ needs.test.outputs.passed }}
+              INPUT_COVERAGE-STATUS:        ${{ needs.coverage.outputs.passed }}
+              INPUT_SECURITY-STATUS:        ${{ needs.security.outputs.passed }}
+              INPUT_SBOM-STATUS:            ${{ needs.sbom.outputs.passed }}
+              INPUT_BENCHMARK-STATUS:       ${{ needs.benchmark.outputs.passed }}
 
   enforce:
     name: Enforce Governance Gate

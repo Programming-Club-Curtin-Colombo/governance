@@ -91,16 +91,6 @@ function auditCoAuthorEmails(authors, allowedDomains) {
 
 // ─── PR comment builders ──────────────────────────────────────────────────────
 
-function buildArtifactWarningsSection(artifactReport) {
-    if (!artifactReport?.warnings?.length) return "";
-
-    const lines = artifactReport.warnings
-        .map(w => `> ⚠️ ${w}`)
-        .join("\n");
-
-    return `\n**Artifact Warnings:**\n${lines}\n`;
-}
-
 function buildCoAuthorWarningsSection(warnings) {
     if (!warnings.length) return "";
 
@@ -108,45 +98,9 @@ function buildCoAuthorWarningsSection(warnings) {
     return `\n**Co-Author Email Warnings:**\n${lines}\n`;
 }
 
-function buildCommitAuditSection(commitAudit) {
-    if (!commitAudit?.commits?.length) return "";
-
-    const commitLines = commitAudit.commits.map(c => {
-        const author    = c.author?.login ? `@${c.author.login}` : (c.author?.email || "unknown");
-        const coAuthors = c.coAuthors?.length
-            ? c.coAuthors.map(ca => `${ca.name} <${ca.email}>`).join(", ")
-            : "—";
-        return `| \`${c.sha}\` | ${c.message} | ${author} | ${coAuthors} |`;
-    }).join("\n");
-
-    const rosterLines = commitAudit.authors.map(a => {
-        const identity = a.login ? `@${a.login}` : (a.name || "—");
-        const commits  = a.commits.map(s => `\`${s}\``).join(" ");
-        return `| ${identity} | \`${a.email || "—"}\` | ${a.role} | ${commits} |`;
-    }).join("\n");
-
-    return `
-<details>
-<summary>📋 Commit Audit (${commitAudit.commits.length} commits, ${commitAudit.authors.length} contributors)</summary>
-
-**Commits**
-
-| SHA | Message | Author | Co-Authors |
-|-----|---------|--------|------------|
-${commitLines}
-
-**Author Roster**
-
-| Identity | Email | Role | Commits |
-|----------|-------|------|---------|
-${rosterLines}
-
-</details>`;
-}
-
 // ─── Block / approve ──────────────────────────────────────────────────────────
 
-async function blockPR(octokit, pr, config, { username, email, role, type, reason }, commentExtra) {
+async function blockPR(octokit, pr, config, { username, email, role, type, reason, ciStatuses, artifactReport, archivePath }, commentExtra) {
     await emitAuditEvent({
         octokit,
         repo:   `${github.context.repo.owner}/${github.context.repo.repo}`,
@@ -159,7 +113,10 @@ async function blockPR(octokit, pr, config, { username, email, role, type, reaso
             type,
             allowed:   false,
             reason,
-            eventType: github.context.eventName
+            eventType: github.context.eventName,
+            ciStatuses,
+            artifactReport,
+            archivePath
         }
     });
 
@@ -191,7 +148,8 @@ async function handlePullRequest(
     artifactReport,
     baseReportMarkdown,
     workspace,
-    mergedConfig
+    mergedConfig,
+    archivePath
 ) {
     const pr = github.context.payload.pull_request;
 
@@ -211,11 +169,12 @@ async function handlePullRequest(
 
     // ── Config ────────────────────────────────────────────────────────────────
     // Use the already-merged config when available; fall back to loading fresh.
-    const config = mergedConfig || (() => {
+    let config = mergedConfig;
+    if (!config) {
         const repoConfig   = loadRepoConfig();
-        const globalConfig = loadGlobalConfig(repoConfig);
-        return mergeConfigs(globalConfig, repoConfig);
-    })();
+        const globalConfig = await loadGlobalConfig(repoConfig);
+        config = mergeConfigs(globalConfig, repoConfig);
+    }
 
     // ── Email resolution ──────────────────────────────────────────────────────
     const { data: userProfile } =
@@ -278,7 +237,8 @@ async function handlePullRequest(
 
         // Update archive with the enriched report
         if (config.artifactArchive?.enabled !== false && artifactReport) {
-            archiveArtifacts(artifactReport.found, fullReportHtml, workspace);
+            const archiveResult = archiveArtifacts(artifactReport.found, fullReportHtml, workspace);
+            archivePath = archiveResult.archivePath || archivePath;
         }
     } catch (err) {
         console.error("[GOVERNANCE][PR] Failed to re-generate enriched report:", err);
@@ -298,9 +258,7 @@ async function handlePullRequest(
     const { violations } = evaluateCIStages(config.requiredStages, ciStatuses);
 
     const commentExtra =
-        buildArtifactWarningsSection(artifactReport) +
         buildCoAuthorWarningsSection(coAuthorWarnings) +
-        buildCommitAuditSection(commitAudit) +
         (fullReportMarkdown ? `\n---\n\n${fullReportMarkdown}` : "");
 
     if (violations.length > 0) {
@@ -309,7 +267,7 @@ async function handlePullRequest(
         core.setOutput("allowed", "false");
 
         await blockPR(octokit, pr, config,
-            { username, email, role, type, reason },
+            { username, email, role, type, reason, ciStatuses, artifactReport, archivePath },
             commentExtra
         );
         return;
@@ -323,7 +281,7 @@ async function handlePullRequest(
 
     if (!result.allowed) {
         await blockPR(octokit, pr, config,
-            { username, email, role, type, reason: result.reason },
+            { username, email, role, type, reason: result.reason, ciStatuses, artifactReport, archivePath },
             commentExtra
         );
         return;
@@ -349,14 +307,17 @@ async function handlePullRequest(
             eventType: github.context.eventName,
             commits:   commitAudit?.commits  || [],
             authors:   commitAudit?.authors  || [],
-            artifactWarnings: artifactReport?.warnings || []
+            artifactWarnings: artifactReport?.warnings || [],
+            ciStatuses,
+            artifactReport,
+            archivePath
         }
     });
 
     await octokit.rest.issues.createComment({
         owner, repo,
         issue_number: pr.number,
-        body: `### Governance Result\n\n- Role: **${role}**\n- Type: **${type}**\n- Status: **APPROVED**\n- Reason: ${result.reason}\n${commentExtra}`
+        body: `### Governance Result\n\n- Role: **${role}**\n- Type: **${type}**\n- Status: **PASSED**\n- Reason: ${result.reason}\n${commentExtra}`
     });
 
     log(role, "approved", "Governance completed");

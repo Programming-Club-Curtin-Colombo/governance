@@ -35,11 +35,14 @@ if (governanceVersion)    process.env.GOVERNANCE_VERSION         = governanceVer
 
 function readCIStatuses() {
     return {
-        build:    core.getInput("build-status")    || "",
-        lint:     core.getInput("lint-status")     || "",
-        test:     core.getInput("test-status")     || "",
-        security: core.getInput("security-status") || "",
-        static:   core.getInput("static-status")   || ""
+        build:     core.getInput("build-status")     || "",
+        lint:      core.getInput("lint-status")      || "",
+        test:      core.getInput("test-status")      || "",
+        coverage:  core.getInput("coverage-status")  || "",
+        security:  core.getInput("security-status")  || "",
+        static:    core.getInput("static-status")    || "",
+        sbom:      core.getInput("sbom-status")      || "",
+        benchmark: core.getInput("benchmark-status") || ""
     };
 }
 
@@ -100,9 +103,11 @@ async function run() {
         }
 
         // ── Artifact archive (base pass — without commit audit in report) ─────
+        let archivePath = null;
         if (config.artifactArchive?.enabled !== false && artifactReport) {
             try {
-                archiveArtifacts(artifactReport.found, reportHtml, workspace);
+                const archiveResult = archiveArtifacts(artifactReport.found, reportHtml, workspace);
+                archivePath = archiveResult.archivePath;
             } catch (err) {
                 console.error("[GOVERNANCE][SYSTEM] Error assembling artifact archive:", err);
             }
@@ -118,12 +123,20 @@ async function run() {
                     artifactReport,
                     reportMarkdown,
                     workspace,
-                    config
+                    config,
+                    archivePath
                 );
                 break;
 
             case "push":
-                await handlePush(ciStatuses);
+                await handlePush(
+                    ciStatuses,
+                    artifactReport,
+                    reportMarkdown,
+                    workspace,
+                    config,
+                    archivePath
+                );
                 break;
 
             default:
