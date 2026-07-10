@@ -11,6 +11,7 @@ const CATEGORY_DIRS = {
     test:     "test",
     analysis: "analysis",
     sbom:     "sbom",
+    perf:     "perf",
     reports:  "reports"
 };
 
@@ -46,6 +47,8 @@ function ensureDir(dirPath) {
  * │   └── trivy.sarif
  * ├── sbom/
  * │   └── cyclonedx.json
+ * ├── perf/
+ * │   └── benchmark.json
  * └── reports/
  *     └── summary.html
  * ```

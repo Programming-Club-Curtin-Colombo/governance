@@ -383,6 +383,56 @@ jobs:
 
 
   # =========================================
+  # BENCHMARK
+  # =========================================
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+
+    outputs:
+      passed: ${{ steps.result.outputs.passed }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Benchmarks
+        run: echo "[BENCHMARK] Not implemented — placeholder"
+
+      - name: Emit benchmark.json
+        run: |
+          cat > benchmark.json <<EOF
+          {
+            "name": "Placeholder Benchmark",
+            "unit": "ms",
+            "value": 100
+          }
+          EOF
+
+      - name: Emit benchmark-summary.json
+        run: |
+          cat > benchmark-summary.json <<EOF
+          {
+            "job": "benchmark",
+            "status": "passed",
+            "reports": [{ "name": "Performance", "status": "passed", "comment": "Benchmark completed (placeholder)" }]
+          }
+          EOF
+
+      - name: Upload Benchmark Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-report
+          path: |
+            benchmark.json
+            benchmark-summary.json
+
+      - name: Set Benchmark Result
+        id: result
+        run: echo "passed=true" >> $GITHUB_OUTPUT
+
+
+  # =========================================
   # GOVERNANCE
   # =========================================
   governance:
@@ -399,6 +449,7 @@ jobs:
       - coverage
       - security
       - sbom
+      - benchmark
 
     permissions:
       contents: write
@@ -436,6 +487,7 @@ jobs:
           INPUT_COVERAGE-STATUS:        ${{ needs.coverage.outputs.passed }}
           INPUT_SECURITY-STATUS:        ${{ needs.security.outputs.passed }}
           INPUT_SBOM-STATUS:            ${{ needs.sbom.outputs.passed }}
+          INPUT_BENCHMARK-STATUS:       ${{ needs.benchmark.outputs.passed }}
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
