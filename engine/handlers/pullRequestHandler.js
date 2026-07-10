@@ -233,17 +233,9 @@ async function handlePullRequest(
                 const c = commits[i];
                 if (c.author?.login === username) {
                     const candidate = c.commit.author.email;
-                    if (typeof candidate === "string") {
-                        const normalized = candidate.trim().toLowerCase();
-                        const atIndex = normalized.lastIndexOf("@");
-                        const domain = atIndex >= 0 ? normalized.slice(atIndex + 1) : "";
-                        const isGithubNoReply =
-                            domain === "noreply.github.com" || domain.endsWith(".noreply.github.com");
-
-                        if (domain && !isGithubNoReply) {
-                            email = candidate;
-                            break;
-                        }
+                    if (candidate && !candidate.includes("noreply.github.com")) {
+                        email = candidate;
+                        break;
                     }
                 }
             }
