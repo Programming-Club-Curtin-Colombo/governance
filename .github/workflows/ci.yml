@@ -246,19 +246,22 @@ jobs:
         with:
           path: reports
 
+      - name: Install Engine Dependencies
+        run: npm install --prefix ${{ github.workspace }} @actions/core@1.10.1 @actions/github@6.0.0
+
       - name: Run Governance Engine
         id: governance
-        uses: Programming-Club-Curtin-Colombo/Governance@fix/remove-commit-emails
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          discord-webhook-url: ${{ secrets.DISCORD_AUDIT_WEBHOOK_URL }}
-          governance-webhook-url: ${{ secrets.GOVERNANCE_WEBHOOK_URL }}
-
-          build-status:    ${{ needs.build.outputs.passed }}
-          lint-status:     ${{ needs.lint.outputs.passed }}
-          static-status:   ${{ needs.static.outputs.passed }}
-          test-status:     ${{ needs.test.outputs.passed }}
-          security-status: ${{ needs.security.outputs.passed }}
+        working-directory: ${{ github.workspace }}
+        run: node engine/run.js
+        env:
+          INPUT_GITHUB-TOKEN:           ${{ secrets.GITHUB_TOKEN }}
+          INPUT_DISCORD-WEBHOOK-URL:    ${{ secrets.DISCORD_AUDIT_WEBHOOK_URL }}
+          INPUT_GOVERNANCE-WEBHOOK-URL: ${{ secrets.GOVERNANCE_WEBHOOK_URL }}
+          INPUT_BUILD-STATUS:           ${{ needs.build.outputs.passed }}
+          INPUT_LINT-STATUS:            ${{ needs.lint.outputs.passed }}
+          INPUT_STATIC-STATUS:          ${{ needs.static.outputs.passed }}
+          INPUT_TEST-STATUS:            ${{ needs.test.outputs.passed }}
+          INPUT_SECURITY-STATUS:        ${{ needs.security.outputs.passed }}
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
