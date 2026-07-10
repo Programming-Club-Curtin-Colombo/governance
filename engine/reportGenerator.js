@@ -11,12 +11,6 @@ function escapeHtml(str) {
         .replace(/"/g,  "&quot;");
 }
 
-function statusBadge(passed) {
-    return passed
-        ? `<span class="badge badge-pass">PASSED</span>`
-        : `<span class="badge badge-fail">FAILED</span>`;
-}
-
 // ─── Section: CI Job Reports ──────────────────────────────────────────────────
 
 function renderJobReportsHtml(reportsData) {
