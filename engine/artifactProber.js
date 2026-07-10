@@ -11,7 +11,7 @@ const path = require("path");
 const STAGE_ARTIFACT_MAP = {
     build: {
         dirs:            ["build-report", "build"],
-        candidates:      ["build.log", "build-summary.json"],
+        candidates:      ["build.log"],
         archiveCategory: "build"
     },
     lint: {
