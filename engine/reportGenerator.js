@@ -96,11 +96,11 @@ function renderCommitAuditHtml(commitAudit) {
 
     const commitRows = commitAudit.commits.map(c => {
         const coAuthorText = c.coAuthors?.length
-            ? c.coAuthors.map(ca => escapeHtml(`${ca.name} <${ca.email}>`)).join("<br>")
+            ? c.coAuthors.map(ca => escapeHtml(ca.name)).join("<br>")
             : "—";
         const authorText = c.author?.login
-            ? `@${escapeHtml(c.author.login)} &lt;${escapeHtml(c.author.email)}&gt;`
-            : escapeHtml(c.author?.email || "unknown");
+            ? `@${escapeHtml(c.author.login)}`
+            : escapeHtml(c.author?.name || "unknown");
 
         return `
             <tr>
@@ -194,11 +194,11 @@ function renderCommitAuditMd(commitAudit) {
 
     for (const c of commitAudit.commits) {
         const coAuthors = c.coAuthors?.length
-            ? c.coAuthors.map(ca => `${ca.name} <${ca.email}>`).join(", ")
+            ? c.coAuthors.map(ca => ca.name).join(", ")
             : "—";
         const author = c.author?.login
-            ? `@${c.author.login} <${c.author.email}>`
-            : (c.author?.email || "unknown");
+            ? `@${c.author.login}`
+            : (c.author?.name || "unknown");
 
         md += `| \`${c.sha}\` | ${c.message} | ${author} | ${coAuthors} |\n`;
     }

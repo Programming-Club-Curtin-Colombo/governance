@@ -112,9 +112,9 @@ function buildCommitAuditSection(commitAudit) {
     if (!commitAudit?.commits?.length) return "";
 
     const commitLines = commitAudit.commits.map(c => {
-        const author    = c.author?.login ? `@${c.author.login}` : (c.author?.email || "unknown");
+        const author    = c.author?.login ? `@${c.author.login}` : (c.author?.name || "unknown");
         const coAuthors = c.coAuthors?.length
-            ? c.coAuthors.map(ca => `${ca.name} <${ca.email}>`).join(", ")
+            ? c.coAuthors.map(ca => ca.name).join(", ")
             : "—";
         return `| \`${c.sha}\` | ${c.message} | ${author} | ${coAuthors} |`;
     }).join("\n");
