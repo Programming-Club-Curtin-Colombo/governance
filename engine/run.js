@@ -1,45 +1,37 @@
-const core = require("@actions/core");
+const core   = require("@actions/core");
 const github = require("@actions/github");
 
-const {
-    handlePullRequest
-} = require("./handlers/pullRequestHandler");
+const { handlePullRequest } = require("./handlers/pullRequestHandler");
+const { handlePush }        = require("./handlers/pushHandler");
+const { validateStructure } = require("./structureValidator");
+const { loadRepoConfig, loadGlobalConfig } = require("./configLoader");
+const { mergeConfigs }      = require("./mergeConfig");
+const { generateReport }    = require("./reportGenerator");
+const { probeArtifacts }    = require("./artifactProber");
+const { archiveArtifacts }  = require("./artifactArchiver");
 
-const {
-    handlePush
-} = require("./handlers/pushHandler");
-
-const {
-    validateStructure
-} = require("./structureValidator");
-
-const {
-    loadRepoConfig,
-    loadGlobalConfig
-} = require("./configLoader");
-
-const {
-    mergeConfigs
-} = require("./mergeConfig");
+// ─── Environment / input resolution ──────────────────────────────────────────
 
 const discordWebhookUrl =
     process.env.DISCORD_AUDIT_WEBHOOK_URL ||
-    core.getInput("discord-webhook-url") ||
+    core.getInput("discord-webhook-url")  ||
     "";
 
 const governanceWebhookUrl =
-    process.env.GOVERNANCE_WEBHOOK_URL ||
+    process.env.GOVERNANCE_WEBHOOK_URL    ||
     core.getInput("governance-webhook-url") ||
     "";
 
 const governanceVersion =
-    process.env.GOVERNANCE_VERSION ||
-    core.getInput("governance-version") ||
+    process.env.GOVERNANCE_VERSION        ||
+    core.getInput("governance-version")   ||
     "";
 
-if (discordWebhookUrl) process.env.DISCORD_AUDIT_WEBHOOK_URL = discordWebhookUrl;
-if (governanceWebhookUrl) process.env.GOVERNANCE_WEBHOOK_URL = governanceWebhookUrl;
-if (governanceVersion) process.env.GOVERNANCE_VERSION = governanceVersion;
+if (discordWebhookUrl)    process.env.DISCORD_AUDIT_WEBHOOK_URL = discordWebhookUrl;
+if (governanceWebhookUrl) process.env.GOVERNANCE_WEBHOOK_URL    = governanceWebhookUrl;
+if (governanceVersion)    process.env.GOVERNANCE_VERSION         = governanceVersion;
+
+// ─── CI status reader ─────────────────────────────────────────────────────────
 
 function readCIStatuses() {
     return {
@@ -51,39 +43,26 @@ function readCIStatuses() {
     };
 }
 
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
 async function run() {
-
     try {
-
-        const { generateHTMLReport } = require("./reportGenerator");
-        let htmlReportMarkdown = "";
-
-        try {
-            htmlReportMarkdown = generateHTMLReport(process.env.GITHUB_WORKSPACE || ".");
-        } catch (e) {
-            console.error(`[GOVERNANCE][SYSTEM] Error generating HTML report:`, e);
-        }
-
-        const eventName =
-            github.context.eventName;
+        const workspace  = process.env.GITHUB_WORKSPACE || ".";
+        const eventName  = github.context.eventName;
 
         const isGovernanceRepo =
             github.context.repo.owner === "Programming-Club-Curtin-Colombo" &&
-            github.context.repo.repo === "governance";
+            github.context.repo.repo  === "governance";
 
         let config = loadRepoConfig();
         const globalConfig = await loadGlobalConfig(config);
         config = mergeConfigs(globalConfig, config);
 
+        // ── Structure validation ──────────────────────────────────────────────
         if (isGovernanceRepo) {
-            console.log(
-                `[GOVERNANCE][SYSTEM] Skipping structure validation for core governance repo`
-            );
+            console.log("[GOVERNANCE][SYSTEM] Skipping structure validation for core governance repo");
         } else {
-            console.log(
-                `[GOVERNANCE][SYSTEM] Validating repository structure...`
-            );
-            
+            console.log("[GOVERNANCE][SYSTEM] Validating repository structure...");
             const structureErrors = validateStructure(config);
             if (structureErrors.length > 0) {
                 throw new Error(
@@ -92,36 +71,70 @@ async function run() {
             }
         }
 
+        // ── CI status + artifact probe ────────────────────────────────────────
         const ciStatuses = readCIStatuses();
 
+        let artifactReport = null;
+
+        if (config.artifactProbing?.enabled !== false) {
+            artifactReport = probeArtifacts(ciStatuses, workspace);
+
+            for (const warning of artifactReport.warnings) {
+                core.warning(warning);
+            }
+        }
+
+        // ── Report generation ─────────────────────────────────────────────────
+        // Commit audit data will be populated by the handler (needs octokit for PR events).
+        // We generate the base report here and re-generate inside the handler once we
+        // have the commit audit, or pass null and let the handler call generateReport.
+        let reportHtml     = "";
+        let reportMarkdown = "";
+
+        try {
+            const result = generateReport(workspace, artifactReport, null);
+            reportHtml     = result.html;
+            reportMarkdown = result.markdown;
+        } catch (err) {
+            console.error("[GOVERNANCE][SYSTEM] Error generating base report:", err);
+        }
+
+        // ── Artifact archive (base pass — without commit audit in report) ─────
+        if (config.artifactArchive?.enabled !== false && artifactReport) {
+            try {
+                archiveArtifacts(artifactReport.found, reportHtml, workspace);
+            } catch (err) {
+                console.error("[GOVERNANCE][SYSTEM] Error assembling artifact archive:", err);
+            }
+        }
+
+        // ── Event routing ─────────────────────────────────────────────────────
         switch (eventName) {
 
             case "pull_request":
             case "pull_request_target":
-
-                await handlePullRequest(ciStatuses, htmlReportMarkdown);
+                await handlePullRequest(
+                    ciStatuses,
+                    artifactReport,
+                    reportMarkdown,
+                    workspace,
+                    config
+                );
                 break;
 
             case "push":
-
                 await handlePush(ciStatuses);
                 break;
 
             default:
-
-                console.log(
-                    `[GOVERNANCE][SYSTEM] Unsupported event`
-                );
+                console.log("[GOVERNANCE][SYSTEM] Unsupported event");
         }
 
     } catch (err) {
-
-        core.setFailed(
-            `[GOVERNANCE][SYSTEM][BLOCKED] ${err.message}`
-        );
+        core.setFailed(`[GOVERNANCE][SYSTEM][BLOCKED] ${err.message}`);
         core.setOutput("allowed", "false");
-        core.setOutput("role", "error");
-        core.setOutput("type", "error");
+        core.setOutput("role",    "error");
+        core.setOutput("type",    "error");
     }
 }
 
