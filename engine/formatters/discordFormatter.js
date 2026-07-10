@@ -15,10 +15,52 @@ function toDiscordPayload(event) {
         title = `Push to ${event.entity.branch} — ${statusEmoji}`;
         
         const commitList = (event.commits || [])
-            .map(c => `\`${c.id}\` ${c.message}`)
+            .map(c => {
+                const author = c.author?.login ? `@${c.author.login}` : (c.author?.name || "unknown");
+                const coAuthors = c.coAuthors?.length ? ` (Co: ${c.coAuthors.map(ca => ca.name).join(", ")})` : "";
+                return `\`${c.sha || c.id}\` ${c.message} - ${author}${coAuthors}`;
+            })
             .join("\n");
             
         description = commitList || `Commits: ${event.commitCount || 0}`;
+    }
+
+    const fields = [
+        {
+            name: "User",
+            value: event.user,
+            inline: true
+        },
+        {
+            name: "Role",
+            value: event.role,
+            inline: true
+        },
+        {
+            name: "Type",
+            value: event.type,
+            inline: true
+        },
+        {
+            name: "Reason",
+            value: event.reason || "N/A"
+        },
+        {
+            name: "Repository",
+            value: event.repo
+        }
+    ];
+
+    if (event.authors && event.authors.length > 0) {
+        const authorList = event.authors.map(a => {
+            const identity = a.login ? `@${a.login}` : (a.name || "unknown");
+            return `${identity} <${a.email || "no-email"}> - ${a.role}`;
+        }).join("\n");
+        
+        fields.push({
+            name: "Author Roster",
+            value: authorList.substring(0, 1024)
+        });
     }
 
     return {
@@ -26,39 +68,12 @@ function toDiscordPayload(event) {
         embeds: [
             {
                 title,
-                description,
+                description: description.substring(0, 4096),
                 color,
-
-                fields: [
-                    {
-                        name: "User",
-                        value: event.user,
-                        inline: true
-                    },
-                    {
-                        name: "Role",
-                        value: event.role,
-                        inline: true
-                    },
-                    {
-                        name: "Type",
-                        value: event.type,
-                        inline: true
-                    },
-                    {
-                        name: "Reason",
-                        value: event.reason || "N/A"
-                    },
-                    {
-                        name: "Repository",
-                        value: event.repo
-                    }
-                ],
-
+                fields,
                 footer: {
                     text: `Policy v${event.policyVersion || "unknown"}`
                 },
-
                 timestamp: event.timestamp
             }
         ]
