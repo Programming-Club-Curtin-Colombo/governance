@@ -248,7 +248,7 @@ jobs:
 
       - name: Run Governance Engine
         id: governance
-        uses: Programming-Club-Curtin-Colombo/Governance@main
+        uses: Programming-Club-Curtin-Colombo/Governance@fix/remove-commit-emails
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           discord-webhook-url: ${{ secrets.DISCORD_AUDIT_WEBHOOK_URL }}
