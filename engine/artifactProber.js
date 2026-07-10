@@ -11,7 +11,7 @@ const path = require("path");
 const STAGE_ARTIFACT_MAP = {
     build: {
         dirs:            ["build-report", "build"],
-        candidates:      ["build.log"],
+        candidates:      ["build.log", "build-summary.json"],
         archiveCategory: "build"
     },
     lint: {
@@ -43,6 +43,11 @@ const STAGE_ARTIFACT_MAP = {
         dirs:            ["sbom-report", "sbom"],
         candidates:      ["cyclonedx.json"],
         archiveCategory: "sbom"
+    },
+    benchmark: {
+        dirs:            ["benchmark-report", "build-report", "build"],
+        candidates:      ["benchmark.json"],
+        archiveCategory: "perf"
     }
 };
 
@@ -52,9 +57,7 @@ const STAGE_ARTIFACT_MAP = {
  *
  * @type {Array<{ filename: string, archiveCategory: string }>}
  */
-const OPPORTUNISTIC_FILES = [
-    { filename: "benchmark.json", archiveCategory: "build" }
-];
+const OPPORTUNISTIC_FILES = [];
 
 /**
  * Recursively lists all files under a given directory.
