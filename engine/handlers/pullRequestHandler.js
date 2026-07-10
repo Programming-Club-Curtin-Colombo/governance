@@ -317,7 +317,7 @@ async function handlePullRequest(
     await octokit.rest.issues.createComment({
         owner, repo,
         issue_number: pr.number,
-        body: `### Governance Result\n\n- Role: **${role}**\n- Type: **${type}**\n- Status: **APPROVED**\n- Reason: ${result.reason}\n${commentExtra}`
+        body: `### Governance Result\n\n- Role: **${role}**\n- Type: **${type}**\n- Status: **PASSED**\n- Reason: ${result.reason}\n${commentExtra}`
     });
 
     log(role, "approved", "Governance completed");

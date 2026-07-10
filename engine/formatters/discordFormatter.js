@@ -1,6 +1,6 @@
 function toDiscordPayload(event) {
     const color = event.allowed ? 0x2ecc71 : 0xe74c3c;
-    const statusEmoji = event.allowed ? "✅ APPROVED" : "❌ BLOCKED";
+    const statusEmoji = event.allowed ? "✅ PASSED" : "❌ BLOCKED";
     const embeds = [];
 
     // ── Main Embed ───────────────────────────────────────────────────────────
@@ -16,12 +16,17 @@ function toDiscordPayload(event) {
     }
 
     const mainFields = [
-        { name: "User", value: event.user, inline: true },
-        { name: "Role", value: event.role, inline: true },
         { name: "Type", value: event.type, inline: true },
         { name: "Reason", value: event.reason || "N/A" },
         { name: "Repository", value: event.repo }
     ];
+
+    if (!event.authors || event.authors.length === 0) {
+        mainFields.unshift(
+            { name: "User", value: event.user, inline: true },
+            { name: "Role", value: event.role, inline: true }
+        );
+    }
 
     if (event.authors && event.authors.length > 0) {
         const authorList = event.authors.map(a => {
