@@ -103,9 +103,11 @@ async function run() {
         }
 
         // ── Artifact archive (base pass — without commit audit in report) ─────
+        let archivePath = null;
         if (config.artifactArchive?.enabled !== false && artifactReport) {
             try {
-                archiveArtifacts(artifactReport.found, reportHtml, workspace);
+                const archiveResult = archiveArtifacts(artifactReport.found, reportHtml, workspace);
+                archivePath = archiveResult.archivePath;
             } catch (err) {
                 console.error("[GOVERNANCE][SYSTEM] Error assembling artifact archive:", err);
             }
@@ -121,12 +123,20 @@ async function run() {
                     artifactReport,
                     reportMarkdown,
                     workspace,
-                    config
+                    config,
+                    archivePath
                 );
                 break;
 
             case "push":
-                await handlePush(ciStatuses);
+                await handlePush(
+                    ciStatuses,
+                    artifactReport,
+                    reportMarkdown,
+                    workspace,
+                    config,
+                    archivePath
+                );
                 break;
 
             default:

@@ -1,5 +1,6 @@
 const fs   = require("fs");
 const path = require("path");
+const { execSync } = require("child_process");
 
 /**
  * Maps each archive category to its output subdirectory name.
@@ -56,7 +57,7 @@ function ensureDir(dirPath) {
  * @param {Array<{ filename: string, absolutePath: string, archiveCategory: string }>} foundArtifacts
  * @param {string} htmlReportContent  - Raw HTML string for summary.html
  * @param {string} workspace          - GITHUB_WORKSPACE or "."
- * @returns {string} Absolute path to the `artifacts/` root directory
+ * @returns {{ archiveRoot: string, archivePath: string | null }}
  */
 function archiveArtifacts(foundArtifacts, htmlReportContent, workspace) {
     const archiveRoot = path.join(workspace, "artifacts");
@@ -107,7 +108,17 @@ function archiveArtifacts(foundArtifacts, htmlReportContent, workspace) {
 
     console.log(`[GOVERNANCE][ARCHIVE] Archive assembled at: ${archiveRoot}`);
 
-    return archiveRoot;
+    let archivePath = null;
+    try {
+        const outPath = path.join(workspace, "artifacts.tar.gz");
+        execSync(`tar -czf ${outPath} -C ${archiveRoot} .`);
+        archivePath = outPath;
+        console.log(`[GOVERNANCE][ARCHIVE] Archive compressed at: ${archivePath}`);
+    } catch (err) {
+        console.error(`[GOVERNANCE][ARCHIVE] Failed to compress archive: ${err.message}`);
+    }
+
+    return { archiveRoot, archivePath };
 }
 
 module.exports = { archiveArtifacts };

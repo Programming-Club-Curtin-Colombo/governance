@@ -14,7 +14,14 @@ function log(state, message) {
     console.log(`[GOVERNANCE][PUSH][${state.toUpperCase()}] ${message}`);
 }
 
-async function handlePush(ciStatuses) {
+async function handlePush(
+    ciStatuses,
+    artifactReport,
+    reportMarkdown,
+    workspace,
+    mergedConfig,
+    archivePath
+) {
 
     const payload = github.context.payload;
 
@@ -27,9 +34,12 @@ async function handlePush(ciStatuses) {
     const branch = ref.replace("refs/heads/", "");
     const pusher = payload.pusher?.name || "unknown";
 
-    const repoConfig   = loadRepoConfig();
-    const globalConfig = await loadGlobalConfig(repoConfig);
-    const config       = mergeConfigs(globalConfig, repoConfig);
+    let config = mergedConfig;
+    if (!config) {
+        const repoConfig   = loadRepoConfig();
+        const globalConfig = await loadGlobalConfig(repoConfig);
+        config = mergeConfigs(globalConfig, repoConfig);
+    }
 
     log("info", `Push detected on ${branch}`);
     log("info", `Pusher: ${pusher}`);
@@ -80,7 +90,10 @@ async function handlePush(ciStatuses) {
             commitCount:   commits.length,
             commits,
             authors,
-            policyVersion: config.version || "unknown"
+            policyVersion: config.version || "unknown",
+            ciStatuses,
+            artifactReport,
+            archivePath
         }
     });
 

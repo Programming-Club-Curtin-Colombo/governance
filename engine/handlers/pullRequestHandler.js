@@ -100,7 +100,7 @@ function buildCoAuthorWarningsSection(warnings) {
 
 // ─── Block / approve ──────────────────────────────────────────────────────────
 
-async function blockPR(octokit, pr, config, { username, email, role, type, reason }, commentExtra) {
+async function blockPR(octokit, pr, config, { username, email, role, type, reason, ciStatuses, artifactReport, archivePath }, commentExtra) {
     await emitAuditEvent({
         octokit,
         repo:   `${github.context.repo.owner}/${github.context.repo.repo}`,
@@ -113,7 +113,10 @@ async function blockPR(octokit, pr, config, { username, email, role, type, reaso
             type,
             allowed:   false,
             reason,
-            eventType: github.context.eventName
+            eventType: github.context.eventName,
+            ciStatuses,
+            artifactReport,
+            archivePath
         }
     });
 
@@ -145,7 +148,8 @@ async function handlePullRequest(
     artifactReport,
     baseReportMarkdown,
     workspace,
-    mergedConfig
+    mergedConfig,
+    archivePath
 ) {
     const pr = github.context.payload.pull_request;
 
@@ -165,11 +169,12 @@ async function handlePullRequest(
 
     // ── Config ────────────────────────────────────────────────────────────────
     // Use the already-merged config when available; fall back to loading fresh.
-    const config = mergedConfig || (() => {
+    let config = mergedConfig;
+    if (!config) {
         const repoConfig   = loadRepoConfig();
-        const globalConfig = loadGlobalConfig(repoConfig);
-        return mergeConfigs(globalConfig, repoConfig);
-    })();
+        const globalConfig = await loadGlobalConfig(repoConfig);
+        config = mergeConfigs(globalConfig, repoConfig);
+    }
 
     // ── Email resolution ──────────────────────────────────────────────────────
     const { data: userProfile } =
@@ -232,7 +237,8 @@ async function handlePullRequest(
 
         // Update archive with the enriched report
         if (config.artifactArchive?.enabled !== false && artifactReport) {
-            archiveArtifacts(artifactReport.found, fullReportHtml, workspace);
+            const archiveResult = archiveArtifacts(artifactReport.found, fullReportHtml, workspace);
+            archivePath = archiveResult.archivePath || archivePath;
         }
     } catch (err) {
         console.error("[GOVERNANCE][PR] Failed to re-generate enriched report:", err);
@@ -261,7 +267,7 @@ async function handlePullRequest(
         core.setOutput("allowed", "false");
 
         await blockPR(octokit, pr, config,
-            { username, email, role, type, reason },
+            { username, email, role, type, reason, ciStatuses, artifactReport, archivePath },
             commentExtra
         );
         return;
@@ -275,7 +281,7 @@ async function handlePullRequest(
 
     if (!result.allowed) {
         await blockPR(octokit, pr, config,
-            { username, email, role, type, reason: result.reason },
+            { username, email, role, type, reason: result.reason, ciStatuses, artifactReport, archivePath },
             commentExtra
         );
         return;
@@ -301,7 +307,10 @@ async function handlePullRequest(
             eventType: github.context.eventName,
             commits:   commitAudit?.commits  || [],
             authors:   commitAudit?.authors  || [],
-            artifactWarnings: artifactReport?.warnings || []
+            artifactWarnings: artifactReport?.warnings || [],
+            ciStatuses,
+            artifactReport,
+            archivePath
         }
     });
 
