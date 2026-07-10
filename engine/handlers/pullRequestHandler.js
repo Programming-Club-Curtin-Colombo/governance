@@ -91,57 +91,11 @@ function auditCoAuthorEmails(authors, allowedDomains) {
 
 // ─── PR comment builders ──────────────────────────────────────────────────────
 
-function buildArtifactWarningsSection(artifactReport) {
-    if (!artifactReport?.warnings?.length) return "";
-
-    const lines = artifactReport.warnings
-        .map(w => `> ⚠️ ${w}`)
-        .join("\n");
-
-    return `\n**Artifact Warnings:**\n${lines}\n`;
-}
-
 function buildCoAuthorWarningsSection(warnings) {
     if (!warnings.length) return "";
 
     const lines = warnings.map(w => `> ⚠️ ${w}`).join("\n");
     return `\n**Co-Author Email Warnings:**\n${lines}\n`;
-}
-
-function buildCommitAuditSection(commitAudit) {
-    if (!commitAudit?.commits?.length) return "";
-
-    const commitLines = commitAudit.commits.map(c => {
-        const author    = c.author?.login ? `@${c.author.login}` : (c.author?.name || "unknown");
-        const coAuthors = c.coAuthors?.length
-            ? c.coAuthors.map(ca => ca.name).join(", ")
-            : "—";
-        return `| \`${c.sha}\` | ${c.message} | ${author} | ${coAuthors} |`;
-    }).join("\n");
-
-    const rosterLines = commitAudit.authors.map(a => {
-        const identity = a.login ? `@${a.login}` : (a.name || "—");
-        const commits  = a.commits.map(s => `\`${s}\``).join(" ");
-        return `| ${identity} | \`${a.email || "—"}\` | ${a.role} | ${commits} |`;
-    }).join("\n");
-
-    return `
-<details>
-<summary>📋 Commit Audit (${commitAudit.commits.length} commits, ${commitAudit.authors.length} contributors)</summary>
-
-**Commits**
-
-| SHA | Message | Author | Co-Authors |
-|-----|---------|--------|------------|
-${commitLines}
-
-**Author Roster**
-
-| Identity | Email | Role | Commits |
-|----------|-------|------|---------|
-${rosterLines}
-
-</details>`;
 }
 
 // ─── Block / approve ──────────────────────────────────────────────────────────
@@ -298,9 +252,7 @@ async function handlePullRequest(
     const { violations } = evaluateCIStages(config.requiredStages, ciStatuses);
 
     const commentExtra =
-        buildArtifactWarningsSection(artifactReport) +
         buildCoAuthorWarningsSection(coAuthorWarnings) +
-        buildCommitAuditSection(commitAudit) +
         (fullReportMarkdown ? `\n---\n\n${fullReportMarkdown}` : "");
 
     if (violations.length > 0) {
